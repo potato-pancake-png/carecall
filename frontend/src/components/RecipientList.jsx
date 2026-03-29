@@ -7,10 +7,6 @@ const RISK_BADGE = {
   정상: { background: '#52c41a', color: '#fff' },
 };
 
-/**
- * 대상자 목록을 테이블로 렌더링한다.
- * @param {{ recipients: Array, onSelect: Function }} props
- */
 function RecipientList({ recipients, onSelect }) {
   if (!recipients || recipients.length === 0) {
     return <p style={styles.empty}>등록된 대상자가 없습니다.</p>;
@@ -23,17 +19,21 @@ function RecipientList({ recipients, onSelect }) {
         <thead>
           <tr>
             <th style={styles.th}>이름</th>
+            <th style={styles.th}>나이</th>
             <th style={styles.th}>연락처</th>
+            <th style={styles.th}>주소</th>
             <th style={styles.th}>담당 복지사</th>
             <th style={styles.th}>최근 위험도</th>
-            <th style={styles.th}>상세</th>
+            <th style={styles.th}>이력</th>
           </tr>
         </thead>
         <tbody>
           {recipients.map((r) => (
             <tr key={r.recipientId} style={styles.tr}>
               <td style={styles.td}>{r.name}</td>
+              <td style={styles.td}>{r.age}세</td>
               <td style={styles.td}>{r.phoneNumber}</td>
+              <td style={styles.td}>{r.address}</td>
               <td style={styles.td}>{r.assignedWorker || '-'}</td>
               <td style={styles.td}>
                 {r.lastRiskLevel ? (
@@ -41,7 +41,7 @@ function RecipientList({ recipients, onSelect }) {
                     {r.lastRiskLevel}
                   </span>
                 ) : (
-                  '-'
+                  <span style={{ ...styles.badge, background: '#8c8c8c', color: '#fff' }}>미통화</span>
                 )}
               </td>
               <td style={styles.td}>
@@ -61,9 +61,9 @@ const styles = {
   container: { marginBottom: '32px' },
   title: { fontSize: '18px', fontWeight: 'bold', marginBottom: '12px' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  th: { background: '#f0f2f5', padding: '10px 12px', textAlign: 'left', fontWeight: '600', borderBottom: '1px solid #d9d9d9' },
+  th: { background: '#f0f2f5', padding: '10px 12px', textAlign: 'left', fontWeight: '600', borderBottom: '1px solid #d9d9d9', fontSize: '13px' },
   tr: { borderBottom: '1px solid #f0f0f0' },
-  td: { padding: '10px 12px', verticalAlign: 'middle' },
+  td: { padding: '10px 12px', verticalAlign: 'middle', fontSize: '14px' },
   badge: { padding: '2px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' },
   button: { padding: '4px 12px', fontSize: '12px', cursor: 'pointer', border: '1px solid #1890ff', color: '#1890ff', background: '#fff', borderRadius: '4px' },
   empty: { color: '#999' },
