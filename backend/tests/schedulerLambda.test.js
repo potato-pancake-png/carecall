@@ -7,7 +7,7 @@ jest.mock('@aws-sdk/util-dynamodb');
 
 const { DynamoDBClient, ScanCommand } = require('@aws-sdk/client-dynamodb');
 const { ConnectClient, StartOutboundVoiceContactCommand } = require('@aws-sdk/client-connect');
-const { unmarshall } = require('@aws-sdk/util-dynamodb');
+const { unmarshall, marshall } = require('@aws-sdk/util-dynamodb');
 
 // 모킹 설정 - send 메서드를 jest.fn()으로
 const mockDynamoSend = jest.fn();
@@ -23,6 +23,7 @@ unmarshall.mockImplementation((item) => {
   }
   return result;
 });
+marshall.mockImplementation((obj) => obj);
 
 // 환경 변수 설정 (모듈 로드 전)
 process.env.CONNECT_INSTANCE_ID = 'test-instance-id';
