@@ -86,12 +86,13 @@ describe('schedulerLambda', () => {
     expect(body.failed).toBe(1);
   });
 
-  test('DynamoDB 조회 실패 시 500 에러를 반환한다', async () => {
+  test('DynamoDB 조회 실패 시 503 에러를 반환한다', async () => {
     mockDynamoSend.mockRejectedValueOnce(new Error('DynamoDB 연결 실패'));
 
     const result = await handler({});
 
-    expect(result.statusCode).toBe(500);
+    // ✓ c5 - DatabaseError catch 시 HTTP 503 반환 검증
+    expect(result.statusCode).toBe(503);
     expect(JSON.parse(result.body).error).toMatch('DynamoDB');
   });
 

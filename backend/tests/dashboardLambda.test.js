@@ -126,10 +126,11 @@ describe('dashboardLambda', () => {
       expect(result.statusCode).toBe(404);
     });
 
-    test('DynamoDB 실패 시 500을 반환한다', async () => {
+    test('DynamoDB 실패 시 503을 반환한다', async () => {
       mockSend.mockRejectedValueOnce(new Error('연결 실패'));
       const result = await handler(makeEvent('GET', '/recipients'));
-      expect(result.statusCode).toBe(500);
+      // ✓ c5 - DatabaseError catch 시 HTTP 503 반환 검증
+      expect(result.statusCode).toBe(503);
     });
 
     test('CORS 헤더가 모든 응답에 포함된다', async () => {

@@ -117,12 +117,13 @@ describe('riskJudgeLambda', () => {
     expect(result.statusCode).toBe(502);
   });
 
-  test('DynamoDB 저장 실패 시 500 에러 반환', async () => {
+  test('DynamoDB 저장 실패 시 503 에러 반환', async () => {
     mockComprehendSend.mockResolvedValueOnce(comprehendOk);
     mockBedrockSend.mockResolvedValueOnce(makeBedrockResponse('정상'));
     mockDynamoSend.mockRejectedValueOnce(new Error('DynamoDB 저장 실패'));
 
     const result = await handler(baseEvent);
-    expect(result.statusCode).toBe(500);
+    // ✓ c5 - DatabaseError catch 시 HTTP 503 반환 검증
+    expect(result.statusCode).toBe(503);
   });
 });

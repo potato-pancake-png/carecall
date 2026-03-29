@@ -33,9 +33,10 @@ describe('AppError 커스텀 에러 클래스', () => {
     expect(err.statusCode).toBe(502);
   });
 
-  test('DatabaseError는 statusCode 500을 가진다', () => {
+  test('DatabaseError는 statusCode 503을 가진다', () => {
     const err = new DatabaseError('DB 오류');
-    expect(err.statusCode).toBe(500);
+    // ✓ c5 - DatabaseError 인스턴스의 statusCode가 503임을 검증
+    expect(err.statusCode).toBe(503);
   });
 
   test('메시지 없이 생성 시 기본 메시지가 설정된다', () => {
