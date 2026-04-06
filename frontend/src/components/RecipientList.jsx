@@ -1,5 +1,8 @@
 // ✓ c5 - 대상자 목록 컴포넌트
 import React from 'react';
+import { useState } from 'react';
+import RiskCorrectionModal from './RiskCorrectionModal';
+import { updateRiskLevel } from '../api/dashboardApi';
 
 const RISK_BADGE = {
   위험: { background: '#ff4d4f', color: '#fff' },
@@ -8,6 +11,18 @@ const RISK_BADGE = {
 };
 
 function RecipientList({ recipients, onSelect }) {
+  const [list, setList] = useState(recipients || []);
+  const [correcting, setCorrecting] = useState(null);
+  const [hoveredId, setHoveredId] = useState(null);
+
+  const handleConfirm = async ({ recipientId, newRiskLevel, reason }) => {
+    await updateRiskLevel({ recipientId, newRiskLevel, reason });
+    setList((prev) =>
+      prev.map((r) =>
+        r.recipientId === recipientId ? { ...r, lastRiskLevel: newRiskLevel } : r
+              )
+           );
+  };
   if (!recipients || recipients.length === 0) {
     return <p style={styles.empty}>등록된 대상자가 없습니다.</p>;
   }
@@ -28,7 +43,7 @@ function RecipientList({ recipients, onSelect }) {
           </tr>
         </thead>
         <tbody>
-          {recipients.map((r) => (
+          {list.map((r) => (
             <tr key={r.recipientId} style={styles.tr}>
               <td style={styles.td}>{r.name}</td>
               <td style={styles.td}>{r.age}세</td>
