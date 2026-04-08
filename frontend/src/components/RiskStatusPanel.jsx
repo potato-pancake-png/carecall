@@ -1,5 +1,6 @@
 // ✓ c5 - 위험도 현황 컴포넌트
-import React from 'react';
+import React, { useState } from 'react';
+import { sortByType } from '../utils/sort';
 
 const RISK_STYLE = {
   위험: { border: '1px solid #ff4d4f', background: '#fff1f0', color: '#ff4d4f' },
@@ -38,52 +39,87 @@ function TodayStatusCards({ todayStatus }) {
 }
 
 function AtRiskList({ atRiskList }) {
+  const [sortType, setSortType] = useState('default');
+
+  if (!atRiskList || atRiskList.length === 0) {
+    return (
+      <div style={styles.section}>
+        <h2 style={styles.title}>주의·위험·미응답 목록</h2>
+        <p style={styles.empty}>해당 없음</p>
+      </div>
+    );
+  }
+
+  const sortedData = sortByType(
+    atRiskList,
+    sortType,
+    (r) => r.status === '응답',
+    (r) => r.riskLevel
+  );
+
   return (
     <div style={styles.section}>
       <h2 style={styles.title}>주의·위험·미응답 목록</h2>
-      {!atRiskList || atRiskList.length === 0 ? (
-        <p style={styles.empty}>해당 없음</p>
-      ) : (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>이름</th>
-              <th style={styles.th}>상태</th>
-              <th style={styles.th}>위험도</th>
-              <th style={styles.th}>통화 시간</th>
-              <th style={styles.th}>통화 시간(분)</th>
-              <th style={styles.th}>판단 근거</th>
-            </tr>
-          </thead>
-          <tbody>
-            {atRiskList.map((r) => {
-              const level = r.status === '미응답' ? '미응답' : r.riskLevel;
-              return (
-                <tr key={r.contactId} style={styles.tr}>
-                  <td style={styles.td}>{r.recipientName}</td>
-                  <td style={styles.td}>
-                    <span style={{ ...styles.badge, background: r.status === '미응답' ? '#8c8c8c' : '#1890ff' }}>
-                      {r.status}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    {level ? (
-                      <span style={{ ...styles.badge, ...BADGE_STYLE[level] }}>{level}</span>
-                    ) : '-'}
-                  </td>
-                  <td style={styles.td}>
-                    {r.callTime ? new Date(r.callTime).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}
-                  </td>
-                  <td style={styles.td}>
-                    {r.duration != null ? `${r.duration}분` : '-'}
-                  </td>
-                  <td style={styles.td}>{r.riskReason || '-'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+      <div style={styles.sortButtons}>
+        <button
+          onClick={() => setSortType('default')}
+          style={{ ...styles.sortButton, ...(sortType === 'default' ? styles.active : {}) }}
+        >
+          기본순
+        </button>
+        <button
+          onClick={() => setSortType('response')}
+          style={{ ...styles.sortButton, ...(sortType === 'response' ? styles.active : {}) }}
+        >
+          미통화 우선
+        </button>
+        <button
+          onClick={() => setSortType('risk')}
+          style={{ ...styles.sortButton, ...(sortType === 'risk' ? styles.active : {}) }}
+        >
+          위험도순
+        </button>
+      </div>
+
+      <table style={styles.table}>
+        <thead>
+          <tr>
+            <th style={styles.th}>이름</th>
+            <th style={styles.th}>상태</th>
+            <th style={styles.th}>위험도</th>
+            <th style={styles.th}>통화 시간</th>
+            <th style={styles.th}>통화 시간(분)</th>
+            <th style={styles.th}>판단 근거</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedData.map((r) => {
+            const level = r.status === '미응답' ? '미응답' : r.riskLevel;
+            return (
+              <tr key={r.contactId} style={styles.tr}>
+                <td style={styles.td}>{r.recipientName}</td>
+                <td style={styles.td}>
+                  <span style={{ ...styles.badge, background: r.status === '미응답' ? '#8c8c8c' : '#1890ff' }}>
+                    {r.status}
+                  </span>
+                </td>
+                <td style={styles.td}>
+                  {level ? (
+                    <span style={{ ...styles.badge, ...BADGE_STYLE[level] }}>{level}</span>
+                  ) : '-'}
+                </td>
+                <td style={styles.td}>
+                  {r.callTime ? new Date(r.callTime).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                </td>
+                <td style={styles.td}>
+                  {r.duration != null ? `${r.duration}분` : '-'}
+                </td>
+                <td style={styles.td}>{r.riskReason || '-'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -100,6 +136,9 @@ function RiskStatusPanel({ todayStatus, atRiskList }) {
 const styles = {
   section: { marginBottom: '32px' },
   title: { fontSize: '18px', fontWeight: 'bold', marginBottom: '12px' },
+  sortButtons: { display: 'flex', gap: '8px', marginBottom: '12px' },
+  sortButton: { padding: '4px 10px', fontSize: '12px', cursor: 'pointer', border: '1px solid #d9d9d9', background: '#fff', borderRadius: '4px' },
+  active: { border: '1px solid #1890ff', color: '#1890ff', fontWeight: '600' },
   cardRow: { display: 'flex', gap: '16px', flexWrap: 'wrap' },
   card: { padding: '20px 28px', borderRadius: '8px', border: '1px solid #d9d9d9', background: '#fafafa', minWidth: '120px', textAlign: 'center' },
   cardNum: { fontSize: '32px', fontWeight: 'bold' },
