@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Component, useEffect, useRef, useState } from 'react';
 import RecipientList from './components/RecipientList';
 import CallTimeline from './components/CallTimeline';
 import RiskStatusPanel from './components/RiskStatusPanel';
@@ -7,6 +7,47 @@ import MyAccountScreen from './components/admin/MyAccountScreen';
 import SecuritySettingsScreen from './components/admin/SecuritySettingsScreen';
 import { RECIPIENTS as INITIAL_RECIPIENTS, TODAY_STATUS, TODAY_RECORDS, getCallHistory } from './mockData';
 import { ADMIN_ACCOUNTS, SECURITY_EVENTS } from './components/admin/adminMockData';
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-body)', padding: '2rem' }}>
+          <div className="card" style={{ maxWidth: '28rem', textAlign: 'center', padding: '3rem 2rem' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>&#9888;&#65039;</div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.75rem' }}>
+              문제가 발생했습니다
+            </h2>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+              {this.state.error?.message || '예기치 않은 오류가 발생했습니다. 페이지를 새로고침해주세요.'}
+            </p>
+            <button
+              className="btn btn-primary"
+              style={{ padding: '0.75rem 2rem' }}
+              onClick={() => window.location.reload()}
+            >
+              페이지 새로고침
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const DASHBOARD_TABS = ['위험도 현황', '대상자 목록'];
 
@@ -47,11 +88,11 @@ function LoginScreen({ onLogin }) {
         <form className="form-group" style={{ gap: '1.5rem' }} onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">관리자 이메일</label>
-            <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@carecall.kr" />
+            <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@carecall.kr" autoComplete="email" inputMode="email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" aria-label="관리자 이메일" />
           </div>
           <div className="form-group">
             <label className="form-label">비밀번호</label>
-            <input type="password" className="form-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+            <input type="password" className="form-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" minLength="8" aria-label="비밀번호" />
           </div>
           {error && <p style={{ margin: 0, color: 'var(--color-danger)', fontSize: '0.875rem', textAlign: 'center' }}>{error}</p>}
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem' }}>
@@ -75,7 +116,7 @@ function AccountMenu({ currentUser, currentView, onNavigate, onLogout }) {
 
   return (
     <div ref={menuRef} style={{ position: 'relative' }}>
-      <button className="btn btn-outline" style={{ padding: '0.375rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderRadius: 'var(--radius-lg)' }} onClick={() => setIsOpen(!isOpen)}>
+      <button className="btn btn-outline" aria-label="계정 메뉴" aria-expanded={isOpen} aria-haspopup="true" style={{ padding: '0.375rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderRadius: 'var(--radius-lg)' }} onClick={() => setIsOpen(!isOpen)}>
         <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.75rem', overflow: 'hidden' }}>
           {currentUser.photo ? <img src={currentUser.photo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getAvatarLabel(currentUser.name, currentUser.email)}
         </div>
@@ -156,13 +197,20 @@ function App() {
             </div>
 
             {currentView === 'dashboard' && (
-              <div className="tabs" style={{ marginBottom: 0, borderBottom: 'none' }}>
-                {DASHBOARD_TABS.map((tab) => (
-                  <button key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} style={{ padding: '1.25rem 0' }} onClick={() => handleTabChange(tab)}>
-                    {tab}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="tabs desktop-only" style={{ marginBottom: 0, borderBottom: 'none' }}>
+                  {DASHBOARD_TABS.map((tab) => (
+                    <button key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} style={{ padding: '1.25rem 0' }} onClick={() => handleTabChange(tab)}>
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+                <select className="mobile-only form-input" style={{ width: 'auto', fontSize: '0.875rem', padding: '0.5rem 0.75rem' }} value={activeTab} onChange={(e) => handleTabChange(e.target.value)}>
+                  {DASHBOARD_TABS.map((tab) => (
+                    <option key={tab} value={tab}>{tab}</option>
+                  ))}
+                </select>
+              </>
             )}
           </div>
 
@@ -234,4 +282,12 @@ function App() {
   );
 }
 
-export default App;
+function AppWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+export default AppWithErrorBoundary;

@@ -21,7 +21,7 @@ https://도메인 으로 서비스
 ## Step 1. S3 버킷 생성
 
 - 버킷 이름: `carecall-frontend` (전 세계 고유해야 함)
-- 리전: `ap-northeast-2` (서울)
+- 리전: `us-east-1`
 - **퍼블릭 액세스 차단: 활성화 유지** (CloudFront를 통해서만 접근)
 - 정적 웹사이트 호스팅: 비활성화 (CloudFront Origin으로만 사용)
 
@@ -52,11 +52,7 @@ https://도메인 으로 서비스
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "s3:PutObject",
-        "s3:DeleteObject",
-        "s3:ListBucket"
-      ],
+      "Action": ["s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
       "Resource": [
         "arn:aws:s3:::carecall-frontend",
         "arn:aws:s3:::carecall-frontend/*"
@@ -79,14 +75,14 @@ https://도메인 으로 서비스
 
 GitHub 레포 → Settings → Secrets and variables → Actions:
 
-| Secret 이름 | 값 |
-|---|---|
-| `AWS_ACCESS_KEY_ID` | IAM 액세스 키 |
-| `AWS_SECRET_ACCESS_KEY` | IAM 시크릿 키 |
-| `AWS_REGION` | `ap-northeast-2` |
-| `S3_BUCKET` | `carecall-frontend` |
-| `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront 배포 ID |
-| `VITE_API_BASE_URL` | API Gateway URL (추후 추가) |
+| Secret 이름                  | 값                          |
+| ---------------------------- | --------------------------- |
+| `AWS_ACCESS_KEY_ID`          | IAM 액세스 키               |
+| `AWS_SECRET_ACCESS_KEY`      | IAM 시크릿 키               |
+| `AWS_REGION`                 | `ap-northeast-2`            |
+| `S3_BUCKET`                  | `carecall-frontend`         |
+| `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront 배포 ID          |
+| `VITE_API_BASE_URL`          | API Gateway URL (추후 추가) |
 
 ---
 
@@ -102,7 +98,7 @@ on:
     branches:
       - main
     paths:
-      - 'frontend/**'
+      - "frontend/**"
 
 jobs:
   deploy:
@@ -113,8 +109,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
@@ -151,6 +147,7 @@ jobs:
 ## Step 6. 커스텀 도메인 연결 (선택)
 
 도메인이 있다면:
+
 1. ACM(AWS Certificate Manager) → 인증서 발급 (리전: **반드시 us-east-1**)
 2. CloudFront → Alternate domain name(CNAME)에 도메인 입력
 3. Route 53 또는 도메인 DNS에 CNAME 레코드 추가
@@ -169,8 +166,8 @@ jobs:
 
 ## 비용 추정 (월)
 
-| 서비스 | 예상 비용 |
-|---|---|
-| S3 저장 (< 1GB) | ~$0.02 |
-| CloudFront (10GB 트래픽) | ~$0.85 |
-| **합계** | **< $1** |
+| 서비스                   | 예상 비용 |
+| ------------------------ | --------- |
+| S3 저장 (< 1GB)          | ~$0.02    |
+| CloudFront (10GB 트래픽) | ~$0.85    |
+| **합계**                 | **< $1**  |

@@ -35,19 +35,39 @@ function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
           const isUrgent = (type === '위험' || type === '주의') && count > 0;
           
           return (
-            <div 
-              key={type} 
-              className={`card ${isUrgent ? (type === '위험' ? 'pulse-danger' : 'pulse-warning') : ''}`} 
-              style={{ 
+            <div
+              key={type}
+              role="button"
+              tabIndex={0}
+              aria-selected={isActive}
+              className={`card ${isUrgent ? (type === '위험' ? 'pulse-danger' : 'pulse-warning') : ''}`}
+              style={{
                 display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '1.5rem',
                 cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 border: isActive ? `2px solid ${config.color}` : '1px solid var(--color-border)',
-                backgroundColor: isActive ? 'var(--color-bg-subtle)' : 'var(--color-bg-surface)',
-                transform: isActive ? 'scale(1.05)' : 'scale(1)',
-                boxShadow: isActive ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
+                backgroundColor: isActive ? `color-mix(in srgb, ${config.color} 6%, var(--color-bg-surface))` : 'var(--color-bg-surface)',
+                transform: isActive ? 'scale(1.05) translateY(-4px)' : 'translateY(0)',
+                boxShadow: isActive
+                  ? `var(--shadow-lg), 0 4px 20px -4px color-mix(in srgb, ${config.color} 30%, transparent)`
+                  : 'var(--shadow-sm)',
                 position: 'relative', overflow: 'hidden'
               }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                  e.currentTarget.style.borderColor = config.border;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                  e.currentTarget.style.borderColor = 'var(--color-border)';
+                }
+              }}
               onClick={() => onFilterChange(type)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onFilterChange(type); } }}
             >
               {isActive && (
                 <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem' }}>
@@ -64,7 +84,7 @@ function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
   );
 }
 
-function AtRiskList({ atRiskList, activeFilter, onRecipientSelect }) {
+function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChange }) {
   const [sortType, setSortType] = useState('default');
 
   const sortedData = sortByType(atRiskList, sortType, (r) => r.status === '응답', (r) => r.riskLevel);
@@ -95,8 +115,26 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect }) {
       <div className="card" style={{ padding: 0, overflow: 'hidden', border: 'none', boxShadow: 'var(--shadow-lg)' }}>
         {atRiskList.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--color-text-muted)' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✨</div>
-            <p style={{ fontWeight: 600 }}>해당 조건에 맞는 대상자가 없습니다.</p>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--color-success-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <p style={{ fontWeight: 700, fontSize: '1.0625rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>
+              {activeFilter === '전체' ? '모든 대상자가 안전합니다' : `${activeFilter} 판정 대상자가 없습니다`}
+            </p>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', lineHeight: 1.5, maxWidth: '320px', margin: '0 auto' }}>
+              {activeFilter === '전체'
+                ? '현재 위험 또는 주의 판정을 받은 대상자가 없습니다. 정기 모니터링은 계속됩니다.'
+                : `현재 "${activeFilter}" 상태에 해당하는 대상자가 없습니다.`}
+            </p>
+            {activeFilter !== '전체' && (
+              <button
+                className="btn btn-outline"
+                style={{ marginTop: '1.25rem', fontSize: '0.8125rem', fontWeight: 600 }}
+                onClick={() => onFilterChange && onFilterChange('전체')}
+              >
+                전체 보기
+              </button>
+            )}
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -167,7 +205,7 @@ export default function RiskStatusPanel({ todayStatus, atRiskList, activeFilter,
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <TodayStatusCards todayStatus={todayStatus} activeFilter={activeFilter} onFilterChange={onFilterChange} />
-      <AtRiskList atRiskList={atRiskList} activeFilter={activeFilter} onRecipientSelect={onRecipientSelect} />
+      <AtRiskList atRiskList={atRiskList} activeFilter={activeFilter} onRecipientSelect={onRecipientSelect} onFilterChange={onFilterChange} />
     </div>
   );
 }

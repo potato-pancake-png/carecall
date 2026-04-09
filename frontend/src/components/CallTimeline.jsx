@@ -15,9 +15,34 @@ const SENTIMENT_LABELS = {
 
 const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'%3E%3C/path%3E%3Ccircle cx='12' cy='7' r='4'%3E%3C/circle%3E%3C/svg%3E";
 
-function SentimentLineChart({ history }) {
+function SentimentLineChart({ history, isLoading, error }) {
+  if (isLoading) {
+    return (
+      <div style={{ padding: '2rem', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', marginBottom: '2.5rem', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+        <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '1rem' }}></div>
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>감정 지수 분석 중...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '2rem', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', marginBottom: '2.5rem', border: '1px solid var(--color-danger-light)', textAlign: 'center' }}>
+        <div style={{ fontSize: '1.5rem', marginBottom: '0.75rem' }}>&#9888;&#65039;</div>
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-danger)', fontWeight: 600 }}>데이터를 불러올 수 없습니다</p>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>잠시 후 다시 시도해 주세요.</p>
+      </div>
+    );
+  }
+
   const data = history.slice(0, 10).reverse().filter(r => r.status === '응답');
-  if (data.length < 2) return <div style={{ textAlign: 'center', padding: '1rem', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>데이터 부족</div>;
+  if (data.length < 2) return (
+    <div style={{ padding: '2rem', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', marginBottom: '2.5rem', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+      <div style={{ fontSize: '1.5rem', marginBottom: '0.75rem' }}>&#128202;</div>
+      <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>감정 지수 추이를 표시하려면 최소 2회 이상의 응답 기록이 필요합니다.</p>
+      <p style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', marginTop: '0.25rem' }}>통화가 누적되면 자동으로 차트가 생성됩니다.</p>
+    </div>
+  );
 
   const width = 600;
   const height = 150;
@@ -144,7 +169,7 @@ export default function CallTimeline({ history, recipientName, onClose, recipien
               <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', margin: '0.25rem 0 0' }}>AI 기반 정밀 분석 히스토리</p>
             </div>
           </div>
-          <button className="btn btn-ghost" style={{ padding: '0.5rem', borderRadius: '50%' }} onClick={onClose}>
+          <button className="btn btn-ghost" aria-label="닫기" style={{ padding: '0.5rem', borderRadius: '50%' }} onClick={onClose}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
