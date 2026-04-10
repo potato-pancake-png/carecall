@@ -4,9 +4,8 @@ import CallTimeline from './components/CallTimeline';
 import RiskStatusPanel from './components/RiskStatusPanel';
 import AdminAccountsScreen from './components/admin/AdminAccountsScreen';
 import MyAccountScreen from './components/admin/MyAccountScreen';
-import SecuritySettingsScreen from './components/admin/SecuritySettingsScreen';
 import { RECIPIENTS as INITIAL_RECIPIENTS, TODAY_STATUS, TODAY_RECORDS, getCallHistory } from './mockData';
-import { ADMIN_ACCOUNTS, SECURITY_EVENTS } from './components/admin/adminMockData';
+import { ADMIN_ACCOUNTS } from './components/admin/adminMockData';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -55,7 +54,6 @@ const APP_VIEWS = [
   { id: 'dashboard', label: '대시보드' },
   { id: 'adminAccounts', label: '관리자 계정' },
   { id: 'myAccount', label: '내 계정' },
-  { id: 'security', label: '보안 설정' },
 ];
 
 function getAvatarLabel(name, email) {
@@ -264,8 +262,8 @@ function App() {
              )
           ) : (
              currentView === 'adminAccounts' ? <AdminAccountsScreen accounts={adminAccounts} currentUser={currentUser} onUpdateStatus={() => {}} /> :
-             currentView === 'myAccount' ? <MyAccountScreen user={currentUser} onSaveProfile={() => {}} /> :
-             <SecuritySettingsScreen securityEvents={SECURITY_EVENTS} onChangePassword={() => {}} />
+             currentView === 'myAccount' ? <MyAccountScreen user={currentUser} onSaveProfile={() => {}} onChangePassword={() => {}} /> :
+             null
           )}
         </div>
       </div>
