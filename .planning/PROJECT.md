@@ -30,7 +30,7 @@ Team members can easily integrate frontend with backend using clear, well-docume
 - [ ] AWS migration guide (transitioning from mock to real API)
 - [ ] Data flow documentation (frontend ↔ backend communication)
 - [ ] Error handling strategy specification
-- [ ] Authentication/authorization design (if needed)
+- [ ] Authentication/authorization design — **Amazon Cognito 사용 결정** (JWT, API Gateway Authorizer, orgId 기반 데이터 격리)
 
 ### Out of Scope
 
@@ -61,7 +61,7 @@ Team members can easily integrate frontend with backend using clear, well-docume
 
 - **Scope**: Design and specification documents only — no actual integration implementation
 - **Tech Stack**: Must use existing React frontend + AWS serverless backend (Lambda, DynamoDB, SNS)
-- **AWS Services**: Core services decided (Lambda, DynamoDB, SNS), additional services (API Gateway, Cognito, etc.) TBD with team
+- **AWS Services**: Core services decided (Lambda, DynamoDB, SNS, API Gateway, Cognito). Cognito: JWT 인증, API Gateway Authorizer 연결, orgId 기반 기관별 데이터 격리
 - **Timeline**: Design documents needed before team implements integration
 - **Academic**: Must demonstrate cloud computing concepts for course requirements
 

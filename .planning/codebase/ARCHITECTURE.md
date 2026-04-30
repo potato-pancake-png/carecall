@@ -168,10 +168,11 @@
 - Data: Bedrock response JSON validated against expected riskLevel values
 - Example: `backend/riskJudgeLambda/index.js:99-101` (riskLevel validation)
 
-**Authentication:** Frontend only
-- Simulated login screen (not connected to backend)
-- No JWT or API authentication implemented yet
-- Example: `frontend/src/App.jsx:24-64` (LoginScreen component)
+**Authentication:** Amazon Cognito (결정됨)
+- Cognito User Pool: 관리자 로그인 및 JWT 토큰 발급 (orgId 클레임 포함)
+- API Gateway Cognito Authorizer: 모든 API 요청에서 JWT 자동 검증
+- Lambda: 토큰에서 orgId 추출 → DynamoDB 기관별 데이터 격리
+- 현재 프론트엔드 LoginScreen은 시뮬레이션 상태 (`frontend/src/App.jsx:24-64`), Cognito 연동 구현 필요
 
 ---
 
