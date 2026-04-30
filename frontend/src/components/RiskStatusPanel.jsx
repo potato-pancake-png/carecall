@@ -9,10 +9,219 @@ const RISK_CONFIG = {
   미응답: { label: '미응답', badgeClass: 'badge-neutral', color: 'var(--color-text-light)', border: 'var(--color-border-dark)' },
 };
 
+const CORRECTION_LEVEL_CONFIG = {
+  위험: { color: 'var(--color-danger)', bg: 'var(--color-danger-light)', badgeClass: 'badge-danger' },
+  주의: { color: 'var(--color-warning)', bg: 'var(--color-warning-light)', badgeClass: 'badge-warning' },
+  정상: { color: 'var(--color-success)', bg: 'var(--color-success-light)', badgeClass: 'badge-success' },
+};
+
+function RiskCorrectionModal({ record, currentAdmin, onSave, onCancel }) {
+  const [selectedLevel, setSelectedLevel] = useState('');
+  const [reason, setReason] = useState('');
+  const [step, setStep] = useState('form');
+
+  const aiLevel = record.status === '미응답' ? '미응답' : record.riskLevel;
+  const canSubmit = selectedLevel && reason.trim().length >= 5;
+  const correctedAt = new Date().toLocaleString('ko-KR', {
+    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+
+  function handlePrimary() {
+    if (step === 'form') {
+      setStep('confirm');
+    } else {
+      onSave({
+        riskLevel: selectedLevel,
+        reason: reason.trim(),
+        correctedBy: `${currentAdmin?.name} (${currentAdmin?.role})`,
+        correctedAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)', padding: '1rem' }}>
+      <div style={{ width: '100%', maxWidth: '480px', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', boxShadow: '0 25px 60px -12px rgba(0,0,0,0.3)', overflow: 'hidden', animation: 'slideUp 0.25s ease-out' }}>
+
+        {/* Header */}
+        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border)', background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)', display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+          <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(79,70,229,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <polyline points="9 12 11 14 15 10" />
+            </svg>
+          </div>
+          <div>
+            <h3 style={{ fontWeight: 800, fontSize: '1.0625rem', margin: 0, color: 'var(--color-text-main)' }}>AI 위험도 수동 정정</h3>
+            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: '0.125rem 0 0' }}>관리자 권한으로 AI 판정을 직접 정정합니다</p>
+          </div>
+        </div>
+
+        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+          {/* Subject info card */}
+          <div style={{ backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', border: '1px solid var(--color-border)' }}>
+            <div>
+              <p style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>정정 대상자</p>
+              <p style={{ fontWeight: 900, fontSize: '1.0625rem', margin: '0.25rem 0 0', color: 'var(--color-text-main)' }}>{record.recipientName}</p>
+              {record.callTime && (
+                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: '0.125rem 0 0' }}>
+                  {new Date(record.callTime).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 통화
+                </p>
+              )}
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '1rem' }}>
+              <p style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>현재 AI 판정</p>
+              <div style={{ marginTop: '0.375rem' }}>
+                <span className={`badge ${RISK_CONFIG[aiLevel]?.badgeClass || 'badge-neutral'}`} style={{ fontWeight: 900 }}>{aiLevel}</span>
+              </div>
+              {record.riskReason && (
+                <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', margin: '0.375rem 0 0', maxWidth: '160px', textAlign: 'right', lineHeight: 1.4 }}>
+                  {record.riskReason}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {step === 'form' ? (
+            <>
+              {/* Level selector */}
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.625rem', letterSpacing: '0.03em' }}>
+                  정정할 위험도 <span style={{ color: 'var(--color-danger)' }}>*</span>
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.625rem' }}>
+                  {['위험', '주의', '정상'].map(level => {
+                    const cfg = CORRECTION_LEVEL_CONFIG[level];
+                    const isSelected = selectedLevel === level;
+                    return (
+                      <button
+                        key={level}
+                        onClick={() => setSelectedLevel(level)}
+                        style={{
+                          padding: '0.875rem 0.75rem',
+                          borderRadius: 'var(--radius-md)',
+                          border: `2px solid ${isSelected ? cfg.color : 'var(--color-border)'}`,
+                          backgroundColor: isSelected ? cfg.bg : 'var(--color-bg-surface)',
+                          cursor: 'pointer',
+                          fontWeight: 800,
+                          fontSize: '1rem',
+                          color: isSelected ? cfg.color : 'var(--color-text-muted)',
+                          transition: 'all 0.15s ease',
+                          transform: isSelected ? 'scale(1.04)' : 'scale(1)',
+                          boxShadow: isSelected ? `0 0 0 3px ${cfg.color}22` : 'none',
+                        }}
+                      >
+                        {level}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Reason textarea */}
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.5rem' }}>
+                  정정 사유 <span style={{ color: 'var(--color-danger)' }}>*</span>
+                  <span style={{ fontWeight: 500, color: 'var(--color-text-light)', marginLeft: '0.5rem' }}>(최소 5자)</span>
+                </label>
+                <textarea
+                  value={reason}
+                  onChange={e => setReason(e.target.value)}
+                  placeholder="예: 직접 방문 확인 결과 상태 양호함. AI가 이전 대화 맥락을 과도하게 반영한 것으로 판단됨."
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.5,
+                    border: `1px solid ${reason.trim().length > 0 && reason.trim().length < 5 ? 'var(--color-danger)' : 'var(--color-border)'}`,
+                    borderRadius: 'var(--radius-md)',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                    color: 'var(--color-text-main)',
+                    outline: 'none',
+                    transition: 'border-color 0.15s',
+                    backgroundColor: 'var(--color-bg-surface)',
+                  }}
+                />
+                {reason.trim().length > 0 && reason.trim().length < 5 && (
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--color-danger)', margin: '0.25rem 0 0', fontWeight: 600 }}>5자 이상 입력해주세요</p>
+                )}
+              </div>
+            </>
+          ) : (
+            /* Confirm step */
+            <div style={{ backgroundColor: 'var(--color-warning-light)', border: '1px solid rgba(245, 158, 11, 0.35)', borderRadius: 'var(--radius-lg)', padding: '1.25rem' }}>
+              <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning-hover)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '0.125rem' }}>
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-warning-hover)', margin: 0, lineHeight: 1.5 }}>
+                  아래 내용으로 AI 판정이 정정됩니다. 정정 기록은 감사 로그에 영구 저장됩니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>기존 AI 판정</span>
+                  <span className={`badge ${RISK_CONFIG[aiLevel]?.badgeClass || 'badge-neutral'}`} style={{ fontWeight: 900 }}>{aiLevel}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>정정 위험도</span>
+                  <span className={`badge ${CORRECTION_LEVEL_CONFIG[selectedLevel]?.badgeClass}`} style={{ fontWeight: 900 }}>{selectedLevel}</span>
+                </div>
+                <div style={{ borderTop: '1px solid rgba(245, 158, 11, 0.3)', paddingTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <span style={{ color: 'var(--color-text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>정정 사유</span>
+                  <span style={{ fontWeight: 600, color: 'var(--color-text-main)', lineHeight: 1.5 }}>{reason}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Admin signature */}
+          <div style={{ padding: '0.875rem 1.125rem', backgroundColor: 'var(--color-bg-subtle)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <p style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>정정 관리자</p>
+              <p style={{ fontSize: '0.875rem', fontWeight: 800, margin: '0.125rem 0 0', color: 'var(--color-text-main)' }}>
+                {currentAdmin?.name}
+                <span style={{ fontWeight: 500, color: 'var(--color-text-muted)' }}> · {currentAdmin?.role}</span>
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>정정 시각</p>
+              <p style={{ fontSize: '0.8125rem', fontWeight: 600, margin: '0.125rem 0 0', color: 'var(--color-text-muted)' }}>{correctedAt}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '1.125rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', backgroundColor: 'var(--color-bg-subtle)' }}>
+          <button
+            className="btn btn-outline"
+            onClick={step === 'confirm' ? () => setStep('form') : onCancel}
+            style={{ fontWeight: 700, minWidth: '80px' }}
+          >
+            {step === 'confirm' ? '이전' : '취소'}
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={handlePrimary}
+            disabled={!canSubmit}
+            style={{ fontWeight: 700, minWidth: '120px', opacity: canSubmit ? 1 : 0.45, cursor: canSubmit ? 'pointer' : 'not-allowed' }}
+          >
+            {step === 'form' ? '다음 단계' : '정정 저장'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
   if (!todayStatus) return null;
   const { total, riskCounts, date } = todayStatus;
-  
+
   const cards = [
     { type: '전체', count: total },
     ...Object.entries(riskCounts).map(([type, count]) => ({ type, count }))
@@ -27,13 +236,13 @@ function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
         </div>
         <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-text-light)', backgroundColor: 'var(--color-bg-subtle)', padding: '0.25rem 0.75rem', borderRadius: '99px' }}>{date} 기준</span>
       </div>
-      
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem' }}>
         {cards.map(({ type, count }) => {
           const config = RISK_CONFIG[type];
           const isActive = activeFilter === type;
           const isUrgent = (type === '위험' || type === '주의') && count > 0;
-          
+
           return (
             <div
               key={type}
@@ -84,19 +293,66 @@ function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
   );
 }
 
-function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChange }) {
+function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChange, currentAdmin }) {
   const [sortType, setSortType] = useState('default');
+  const [corrections, setCorrections] = useState({});
+  const [correctionTarget, setCorrectionTarget] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const sortedData = sortByType(atRiskList, sortType, (r) => r.status === '응답', (r) => r.riskLevel);
 
+  function handleSaveCorrection(data) {
+    const name = correctionTarget.recipientName;
+    const id = correctionTarget.contactId;
+    setCorrections(prev => ({ ...prev, [id]: data }));
+    setCorrectionTarget(null);
+    setToast(`${name} 님의 위험도가 "${data.riskLevel}"으로 정정되었습니다.`);
+    setTimeout(() => setToast(null), 4000);
+  }
+
   return (
     <div style={{ animation: 'slideUp 0.4s ease-out' }}>
+      {/* Toast notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 2000,
+          backgroundColor: 'var(--color-text-main)', color: 'white',
+          padding: '0.875rem 1.25rem', borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)', display: 'flex', alignItems: 'center', gap: '0.625rem',
+          fontSize: '0.875rem', fontWeight: 600, animation: 'slideUp 0.3s ease-out',
+          maxWidth: '380px',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {toast}
+        </div>
+      )}
+
+      {/* Correction modal */}
+      {correctionTarget && (
+        <RiskCorrectionModal
+          record={correctionTarget}
+          currentAdmin={currentAdmin}
+          onSave={handleSaveCorrection}
+          onCancel={() => setCorrectionTarget(null)}
+        />
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
             {activeFilter === '전체' ? '집중 모니터링 대상' : `${activeFilter} 판정 대상자`}
           </h2>
           <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>{atRiskList.length}명</span>
+          {Object.keys(corrections).length > 0 && (
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-primary)', backgroundColor: 'var(--color-primary-light)', padding: '0.2rem 0.625rem', borderRadius: '99px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              수동 정정 {Object.keys(corrections).length}건
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           {['default', 'response', 'risk'].map((type) => (
@@ -143,7 +399,7 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
                 <tr style={{ backgroundColor: 'var(--color-bg-subtle)' }}>
                   <th style={{ padding: '1rem 1.5rem' }}>대상자 명</th>
                   <th>상태</th>
-                  <th>AI 판정</th>
+                  <th>위험도 판정</th>
                   <th>발신 시각</th>
                   <th>통화량</th>
                   <th>리스크 감지 사유</th>
@@ -152,19 +408,24 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
               </thead>
               <tbody>
                 {sortedData.map((r) => {
-                  const level = r.status === '미응답' ? '미응답' : r.riskLevel;
-                  const config = RISK_CONFIG[level] || RISK_CONFIG['미응답'];
-                  const isUrgent = level === '위험' || level === '주의';
-                  
+                  const correction = corrections[r.contactId];
+                  const aiLevel = r.status === '미응답' ? '미응답' : r.riskLevel;
+                  const displayLevel = correction ? correction.riskLevel : aiLevel;
+                  const config = RISK_CONFIG[displayLevel] || RISK_CONFIG['미응답'];
+                  const isUrgent = displayLevel === '위험' || displayLevel === '주의';
+
                   return (
-                    <tr 
-                      key={r.contactId} 
-                      style={{ 
-                        backgroundColor: isUrgent ? (level === '위험' ? 'rgba(239, 68, 68, 0.02)' : 'rgba(245, 158, 11, 0.02)') : 'transparent',
-                        transition: 'background-color 0.2s'
+                    <tr
+                      key={r.contactId}
+                      style={{
+                        backgroundColor: correction
+                          ? 'rgba(79, 70, 229, 0.02)'
+                          : isUrgent ? (displayLevel === '위험' ? 'rgba(239, 68, 68, 0.02)' : 'rgba(245, 158, 11, 0.02)') : 'transparent',
+                        transition: 'background-color 0.2s',
+                        borderLeft: correction ? '3px solid var(--color-primary)' : '3px solid transparent',
                       }}
                     >
-                      <td style={{ fontWeight: 800, padding: '1.25rem 1.5rem', color: isUrgent ? config.color : 'var(--color-text-main)' }}>
+                      <td style={{ fontWeight: 800, padding: '1.25rem 1.5rem', color: 'var(--color-text-main)' }}>
                         {r.recipientName}
                       </td>
                       <td>
@@ -173,8 +434,48 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
                         </span>
                       </td>
                       <td>
-                        <div className={`badge ${config.badgeClass}`} style={{ fontWeight: 900, padding: '0.375rem 0.75rem', fontSize: '0.75rem', minWidth: '60px', textAlign: 'center' }}>
-                          {level || '분석 중'}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div className={`badge ${config.badgeClass}`} style={{ fontWeight: 900, padding: '0.375rem 0.75rem', fontSize: '0.75rem', minWidth: '60px', textAlign: 'center' }}>
+                            {displayLevel || '분석 중'}
+                          </div>
+                          <button
+                            onClick={() => setCorrectionTarget(r)}
+                            title={correction ? '위험도 재정정' : '위험도 수동 정정'}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '99px',
+                              border: `1px solid ${correction ? 'var(--color-primary)' : 'var(--color-border-dark)'}`,
+                              backgroundColor: correction ? 'var(--color-primary-light)' : 'transparent',
+                              cursor: 'pointer',
+                              fontSize: '0.6875rem', fontWeight: 700,
+                              color: correction ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                              transition: 'all 0.15s ease',
+                              whiteSpace: 'nowrap',
+                            }}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.borderColor = 'var(--color-primary)';
+                              e.currentTarget.style.color = 'var(--color-primary)';
+                              e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.borderColor = correction ? 'var(--color-primary)' : 'var(--color-border-dark)';
+                              e.currentTarget.style.color = correction ? 'var(--color-primary)' : 'var(--color-text-muted)';
+                              e.currentTarget.style.backgroundColor = correction ? 'var(--color-primary-light)' : 'transparent';
+                            }}
+                          >
+                            {correction ? (
+                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            ) : (
+                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                            )}
+                            {correction ? '정정됨' : '정정'}
+                          </button>
                         </div>
                       </td>
                       <td style={{ color: 'var(--color-text-muted)', fontSize: '0.8125rem', fontWeight: 500 }}>
@@ -183,11 +484,28 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
                       <td style={{ color: 'var(--color-text-muted)', fontSize: '0.8125rem', fontWeight: 600 }}>
                         {r.duration != null ? `${r.duration}분` : '-'}
                       </td>
-                      <td style={{ maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.875rem', fontWeight: 600, color: isUrgent ? 'var(--color-text-main)' : 'var(--color-text-muted)' }}>
-                        {r.riskReason || '-'}
+                      <td style={{ maxWidth: '260px', fontSize: '0.875rem', fontWeight: 600, color: isUrgent ? 'var(--color-text-main)' : 'var(--color-text-muted)' }}>
+                        {correction ? (
+                          <span style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                            <span style={{ color: 'var(--color-text-light)', textDecoration: 'line-through', fontSize: '0.75rem', fontWeight: 500 }}>
+                              {r.riskReason || '-'}
+                            </span>
+                            <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{correction.reason}</span>
+                          </span>
+                        ) : (
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+                            {r.riskReason || '-'}
+                          </span>
+                        )}
                       </td>
                       <td style={{ paddingRight: '1.5rem', textAlign: 'right' }}>
-                        <button className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: 700 }} onClick={() => onRecipientSelect(r.recipientName)}>이력보기</button>
+                        <button
+                          className="btn btn-primary"
+                          style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: 700 }}
+                          onClick={() => onRecipientSelect(r.recipientName)}
+                        >
+                          이력보기
+                        </button>
                       </td>
                     </tr>
                   );
@@ -197,15 +515,50 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
           </div>
         )}
       </div>
+
+      {/* Correction log panel */}
+      {Object.keys(corrections).length > 0 && (
+        <div style={{ marginTop: '1.5rem', padding: '1.25rem 1.5rem', backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', borderLeft: '4px solid var(--color-primary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
+            </svg>
+            <h4 style={{ fontWeight: 800, fontSize: '0.875rem', margin: 0, color: 'var(--color-text-main)' }}>오늘의 수동 정정 로그</h4>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-primary)', backgroundColor: 'var(--color-primary-light)', padding: '0.125rem 0.5rem', borderRadius: '99px' }}>{Object.keys(corrections).length}건</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+            {Object.entries(corrections).map(([contactId, c]) => {
+              const record = atRiskList.find(r => r.contactId === contactId);
+              if (!record) return null;
+              const aiLevel = record.status === '미응답' ? '미응답' : record.riskLevel;
+              return (
+                <div key={contactId} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.875rem', padding: '0.75rem 1rem', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
+                    <span style={{ fontWeight: 800, color: 'var(--color-text-main)' }}>{record.recipientName}</span>
+                    <span className={`badge ${RISK_CONFIG[aiLevel]?.badgeClass || 'badge-neutral'}`} style={{ fontSize: '0.625rem', fontWeight: 900 }}>{aiLevel}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-light)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+                    <span className={`badge ${CORRECTION_LEVEL_CONFIG[c.riskLevel]?.badgeClass}`} style={{ fontSize: '0.625rem', fontWeight: 900 }}>{c.riskLevel}</span>
+                  </div>
+                  <div style={{ flex: 1, color: 'var(--color-text-muted)', lineHeight: 1.4 }}>{c.reason}</div>
+                  <div style={{ flexShrink: 0, textAlign: 'right', color: 'var(--color-text-light)', fontSize: '0.75rem' }}>
+                    <div style={{ fontWeight: 700 }}>{c.correctedBy}</div>
+                    <div>{new Date(c.correctedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default function RiskStatusPanel({ todayStatus, atRiskList, activeFilter, onFilterChange, onRecipientSelect }) {
+export default function RiskStatusPanel({ todayStatus, atRiskList, activeFilter, onFilterChange, onRecipientSelect, currentAdmin }) {
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <TodayStatusCards todayStatus={todayStatus} activeFilter={activeFilter} onFilterChange={onFilterChange} />
-      <AtRiskList atRiskList={atRiskList} activeFilter={activeFilter} onRecipientSelect={onRecipientSelect} onFilterChange={onFilterChange} />
+      <AtRiskList atRiskList={atRiskList} activeFilter={activeFilter} onRecipientSelect={onRecipientSelect} onFilterChange={onFilterChange} currentAdmin={currentAdmin} />
     </div>
   );
 }

@@ -241,15 +241,16 @@ function App() {
         <div className="container" style={{ padding: '2.5rem 2rem' }}>
           {currentView === 'dashboard' ? (
              activeTab === '위험도 현황' ? (
-               <RiskStatusPanel 
-                  todayStatus={TODAY_STATUS} 
-                  atRiskList={filteredTodayRecords} 
+               <RiskStatusPanel
+                  todayStatus={TODAY_STATUS}
+                  atRiskList={filteredTodayRecords}
                   activeFilter={dashboardFilter}
                   onFilterChange={setDashboardFilter}
                   onRecipientSelect={(name) => {
                     const recipient = recipients.find(r => r.name === name);
                     if (recipient) handleRecipientSelect(recipient);
                   }}
+                  currentAdmin={currentUser}
                />
              ) : (
                <RecipientList

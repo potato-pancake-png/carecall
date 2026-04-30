@@ -71,8 +71,16 @@ export const CALL_RECORDS = [
   { contactId: 'hist-5', recipientId: 'r-004', recipientName: '박순덕', status: '응답', duration: 11, callTime: makeDate(-2, 9, 4), sentiment: 'NEGATIVE', sentimentScore: 10, riskLevel: '위험', summary: '우울감', conversation: conversationDanger('박순덕'), createdAt: makeDate(-2, 9, 4) },
 ];
 
-const todayStr = new Date().toISOString().slice(0, 10);
-export const TODAY_RECORDS = CALL_RECORDS.filter(r => r.createdAt.slice(0, 10) === todayStr);
+function toLocalDateStr(d) {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+const todayStr = toLocalDateStr(new Date());
+export const TODAY_RECORDS = CALL_RECORDS.filter(r => toLocalDateStr(new Date(r.createdAt)) === todayStr);
 
 const riskCounts = { 정상: 0, 주의: 0, 위험: 0, 미응답: 0 };
 for (const r of TODAY_RECORDS) {
