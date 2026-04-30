@@ -516,40 +516,6 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
         )}
       </div>
 
-      {/* Correction log panel */}
-      {Object.keys(corrections).length > 0 && (
-        <div style={{ marginTop: '1.5rem', padding: '1.25rem 1.5rem', backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', borderLeft: '4px solid var(--color-primary)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
-            </svg>
-            <h4 style={{ fontWeight: 800, fontSize: '0.875rem', margin: 0, color: 'var(--color-text-main)' }}>오늘의 수동 정정 로그</h4>
-            <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-primary)', backgroundColor: 'var(--color-primary-light)', padding: '0.125rem 0.5rem', borderRadius: '99px' }}>{Object.keys(corrections).length}건</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            {Object.entries(corrections).map(([contactId, c]) => {
-              const record = atRiskList.find(r => r.contactId === contactId);
-              if (!record) return null;
-              const aiLevel = record.status === '미응답' ? '미응답' : record.riskLevel;
-              return (
-                <div key={contactId} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.875rem', padding: '0.75rem 1rem', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
-                    <span style={{ fontWeight: 800, color: 'var(--color-text-main)' }}>{record.recipientName}</span>
-                    <span className={`badge ${RISK_CONFIG[aiLevel]?.badgeClass || 'badge-neutral'}`} style={{ fontSize: '0.625rem', fontWeight: 900 }}>{aiLevel}</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-light)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-                    <span className={`badge ${CORRECTION_LEVEL_CONFIG[c.riskLevel]?.badgeClass}`} style={{ fontSize: '0.625rem', fontWeight: 900 }}>{c.riskLevel}</span>
-                  </div>
-                  <div style={{ flex: 1, color: 'var(--color-text-muted)', lineHeight: 1.4 }}>{c.reason}</div>
-                  <div style={{ flexShrink: 0, textAlign: 'right', color: 'var(--color-text-light)', fontSize: '0.75rem' }}>
-                    <div style={{ fontWeight: 700 }}>{c.correctedBy}</div>
-                    <div>{new Date(c.correctedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
