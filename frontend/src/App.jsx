@@ -3,6 +3,7 @@ import RecipientList from './components/RecipientList';
 import CallTimeline from './components/CallTimeline';
 import RiskStatusPanel from './components/RiskStatusPanel';
 import AdminAccountsScreen from './components/admin/AdminAccountsScreen';
+import StatsPanel from './components/StatsPanel';
 import MyAccountScreen from './components/admin/MyAccountScreen';
 import { RECIPIENTS as INITIAL_RECIPIENTS, TODAY_STATUS, TODAY_RECORDS, getCallHistory } from './mockData';
 import { ADMIN_ACCOUNTS } from './components/admin/adminMockData';
@@ -48,11 +49,10 @@ class ErrorBoundary extends Component {
   }
 }
 
-const DASHBOARD_TABS = ['위험도 현황', '대상자 목록'];
+const DASHBOARD_TABS = ['위험도 현황', '대상자 목록', '통계'];
 
 const APP_VIEWS = [
   { id: 'dashboard', label: '대시보드' },
-  { id: 'adminAccounts', label: '관리자 계정' },
   { id: 'myAccount', label: '내 계정' },
 ];
 
@@ -252,6 +252,8 @@ function App() {
                   }}
                   currentAdmin={currentUser}
                />
+             ) : activeTab === '통계' ? (
+               <StatsPanel />
              ) : (
                <RecipientList
                  recipients={filteredRecipients}
@@ -259,10 +261,11 @@ function App() {
                  onAdd={(r) => setRecipients([...recipients, r])}
                  onUpdate={(r) => setRecipients(recipients.map(i => i.recipientId === r.recipientId ? r : i))}
                  onDelete={(id) => setRecipients(recipients.filter(r => r.recipientId !== id))}
+                 onManualCall={(r) => console.log(`수동 발신 요청: ${r.name} (${r.phoneNumber})`)}
                />
              )
           ) : (
-             currentView === 'adminAccounts' ? <AdminAccountsScreen accounts={adminAccounts} currentUser={currentUser} onUpdateStatus={() => {}} /> :
+             currentView === 'adminAccounts' ? null :
              currentView === 'myAccount' ? <MyAccountScreen user={currentUser} onSaveProfile={() => {}} onChangePassword={() => {}} /> :
              null
           )}

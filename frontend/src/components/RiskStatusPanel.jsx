@@ -1,5 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { sortByType } from '../utils/sort';
+
+function PhoneIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 12 19.79 19.79 0 0 1 1.04 3.36 2 2 0 0 1 3 1.14h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+  );
+}
+
+function SpinnerIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 0.8s linear infinite' }}>
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+  );
+}
+
+function CallConfirmPopover({ recipient, onConfirm, onCancel, position = 'above' }) {
+  return (
+    <div style={{
+      position: 'absolute',
+      ...(position === 'above' ? { bottom: 'calc(100% + 8px)' } : { top: 'calc(100% + 8px)' }),
+      left: '50%',
+      transform: 'translateX(-50%)',
+      backgroundColor: 'white',
+      border: '1px solid var(--color-border)',
+      borderRadius: 'var(--radius-lg)',
+      boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.08)',
+      padding: '1rem',
+      width: '200px',
+      zIndex: 30,
+      animation: 'slideUp 0.15s cubic-bezier(0.16,1,0.3,1)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
+        <div style={{
+          width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
+          backgroundColor: 'var(--color-bg-subtle)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <PhoneIcon size={14} />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {recipient.recipientName}
+          </div>
+        </div>
+      </div>
+      <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+        지금 수동 발신하시겠습니까?
+      </p>
+      <div style={{ display: 'flex', gap: '0.375rem' }}>
+        <button
+          className="btn"
+          style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', backgroundColor: 'var(--color-text-muted)', color: 'white', borderRadius: 'var(--radius-md)', fontWeight: 700, border: 'none' }}
+          onClick={(e) => { e.stopPropagation(); onConfirm(); }}
+        >
+          발신
+        </button>
+        <button
+          className="btn btn-outline"
+          style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem' }}
+          onClick={(e) => { e.stopPropagation(); onCancel(); }}
+        >
+          취소
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const RISK_CONFIG = {
   전체: { label: '총 발신', badgeClass: 'badge-neutral', color: 'var(--color-text-main)', border: 'var(--color-border)' },
@@ -298,6 +367,21 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
   const [corrections, setCorrections] = useState({});
   const [correctionTarget, setCorrectionTarget] = useState(null);
   const [toast, setToast] = useState(null);
+  const [confirmCallId, setConfirmCallId] = useState(null);
+  const [callingId, setCallingId] = useState(null);
+
+  const handleManualCallClick = useCallback((r, e) => {
+    e.stopPropagation();
+    setConfirmCallId(prev => prev === r.contactId ? null : r.contactId);
+  }, []);
+
+  const handleConfirmCall = useCallback((r) => {
+    setConfirmCallId(null);
+    setCallingId(r.contactId);
+    setTimeout(() => setCallingId(null), 2500);
+  }, []);
+
+  const handleClosePopover = useCallback(() => setConfirmCallId(null), []);
 
   const sortedData = sortByType(atRiskList, sortType, (r) => r.status === '응답', (r) => r.riskLevel);
 
@@ -311,7 +395,11 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
   }
 
   return (
-    <div style={{ animation: 'slideUp 0.4s ease-out' }}>
+    <>
+      {confirmCallId && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 25 }} onClick={handleClosePopover} />
+      )}
+      <div style={{ animation: 'slideUp 0.4s ease-out' }}>
       {/* Toast notification */}
       {toast && (
         <div style={{
@@ -400,6 +488,7 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
                   <th style={{ padding: '1rem 1.5rem' }}>대상자 명</th>
                   <th>상태</th>
                   <th>위험도 판정</th>
+                  <th style={{ textAlign: 'center' }}>수동 전화</th>
                   <th>발신 시각</th>
                   <th>통화량</th>
                   <th>리스크 감지 사유</th>
@@ -478,6 +567,38 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
                           </button>
                         </div>
                       </td>
+                      {/* 수동 전화 열 */}
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ position: 'relative', display: 'inline-block', zIndex: confirmCallId === r.contactId ? 30 : 'auto' }}>
+                          <button
+                            className="btn"
+                            style={{
+                              padding: '0.5rem',
+                              minWidth: '36px',
+                              minHeight: '36px',
+                              borderRadius: 'var(--radius-md)',
+                              transition: 'all 0.2s',
+                              border: '1px solid var(--color-border-dark)',
+                              backgroundColor: callingId === r.contactId ? 'var(--color-border-dark)' : 'var(--color-bg-subtle)',
+                              color: callingId === r.contactId ? 'white' : 'var(--color-text-muted)',
+                              cursor: 'pointer',
+                            }}
+                            onClick={(e) => handleManualCallClick(r, e)}
+                            title="수동 전화 걸기"
+                            aria-label="수동 전화 걸기"
+                          >
+                            {callingId === r.contactId ? <SpinnerIcon size={14} /> : <PhoneIcon size={14} />}
+                          </button>
+                          {confirmCallId === r.contactId && (
+                            <CallConfirmPopover
+                              recipient={r}
+                              onConfirm={() => handleConfirmCall(r)}
+                              onCancel={handleClosePopover}
+                              position="below"
+                            />
+                          )}
+                        </div>
+                      </td>
                       <td style={{ color: 'var(--color-text-muted)', fontSize: '0.8125rem', fontWeight: 500 }}>
                         {r.callTime ? new Date(r.callTime).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}
                       </td>
@@ -517,6 +638,7 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
       </div>
 
     </div>
+    </>
   );
 }
 
