@@ -125,7 +125,7 @@ export default function StatsPanel() {
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', flexShrink: 0 }}>{d.missedCalls}</span>
               </div>
               <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-light)', marginTop: '0.125rem' }}>
-                총 {d.totalCalls.toLocaleString()}건 발신 · 30초↑ + 발화 2회↑ 기준
+                총 {d.totalCalls.toLocaleString()}건 발신
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function StatsPanel() {
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-danger)', flexShrink: 0 }}>{d.mismatchCalls}</span>
               </div>
               <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-light)', marginTop: '0.125rem' }}>
-                복지사 재평가 {d.verifiedCalls}건 검증 기준
+                AI 위험 탐지 정확도
               </div>
             </div>
           </div>

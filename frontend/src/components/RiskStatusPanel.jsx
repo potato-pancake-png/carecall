@@ -36,14 +36,17 @@ function CallConfirmPopover({ recipient, onConfirm, onCancel, position = 'above'
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
         <div style={{
           width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-          backgroundColor: 'var(--color-bg-subtle)',
+          background: 'linear-gradient(135deg, var(--color-success-light), #a7f3d0)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <PhoneIcon size={14} />
+          <PhoneIcon size={14} style={{ color: 'var(--color-success-hover)' }} />
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {recipient.recipientName}
+          </div>
+          <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
+            {recipient.phoneNumber}
           </div>
         </div>
       </div>
@@ -53,7 +56,7 @@ function CallConfirmPopover({ recipient, onConfirm, onCancel, position = 'above'
       <div style={{ display: 'flex', gap: '0.375rem' }}>
         <button
           className="btn"
-          style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', backgroundColor: 'var(--color-text-muted)', color: 'white', borderRadius: 'var(--radius-md)', fontWeight: 700, border: 'none' }}
+          style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', backgroundColor: 'var(--color-success)', color: 'white', borderRadius: 'var(--radius-md)', fontWeight: 700, border: 'none' }}
           onClick={(e) => { e.stopPropagation(); onConfirm(); }}
         >
           발신
@@ -303,7 +306,6 @@ function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em' }}>오늘의 통화 인사이트</h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>카드를 클릭하여 상세 대상자를 필터링하세요.</p>
         </div>
-        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-text-light)', backgroundColor: 'var(--color-bg-subtle)', padding: '0.25rem 0.75rem', borderRadius: '99px' }}>{date} 기준</span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem' }}>

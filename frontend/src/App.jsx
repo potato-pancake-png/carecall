@@ -180,6 +180,9 @@ function App() {
     if (dashboardFilter === '전체') return true;
     if (dashboardFilter === '미응답') return r.status === '미응답' || r.riskLevel === '미응답';
     return r.riskLevel === dashboardFilter;
+  }).map(r => {
+    const recipient = recipients.find(rep => rep.recipientId === r.recipientId);
+    return { ...r, phoneNumber: recipient?.phoneNumber || '' };
   });
 
   return (
