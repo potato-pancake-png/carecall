@@ -11,6 +11,7 @@ const SENTIMENT_LABELS = {
   POSITIVE: { label: '긍정', color: 'var(--color-success)', bg: 'var(--color-success-light)' },
   NEGATIVE: { label: '부정', color: 'var(--color-danger)', bg: 'var(--color-danger-light)' },
   NEUTRAL: { label: '중립', color: 'var(--color-text-muted)', bg: 'var(--color-bg-subtle)' },
+  MIXED: { label: '복합', color: 'var(--color-warning-hover)', bg: 'var(--color-warning-light)' },
 };
 
 const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'%3E%3C/path%3E%3Ccircle cx='12' cy='7' r='4'%3E%3C/circle%3E%3C/svg%3E";

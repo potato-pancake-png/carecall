@@ -1,36 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchTodayCallStatus } from '../api/dashboardApi';
 
-const PERIODS = ['이번 주', '이번 달', '전체'];
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
-const STATS = {
-  '이번 주': {
-    totalCalls: 67, successCalls: 54, missedCalls: 13,
-    callSuccessRate: 81.2,
-    aiAccuracy: 91.3, verifiedCalls: 23, mismatchCalls: 2,
-    avgLatency: 3.1,
-    correctionCount: 2, correctionByLevel: { 위험: 1, 주의: 1, 정상: 0 },
-    dailyCalls: [9, 11, 8, 13, 10, 7, 9],
-    dailyLabels: ['월', '화', '수', '목', '금', '토', '일'],
-  },
-  '이번 달': {
-    totalCalls: 284, successCalls: 223, missedCalls: 61,
-    callSuccessRate: 78.4,
-    aiAccuracy: 92.1, verifiedCalls: 100, mismatchCalls: 8,
-    avgLatency: 3.2,
-    correctionCount: 8, correctionByLevel: { 위험: 3, 주의: 4, 정상: 1 },
-    dailyCalls: [42, 38, 45, 51, 39, 32, 37],
-    dailyLabels: ['1주', '2주', '3주', '4주', '5주', '—', '—'],
-  },
-  '전체': {
-    totalCalls: 1248, successCalls: 960, missedCalls: 288,
-    callSuccessRate: 76.9,
-    aiAccuracy: 90.8, verifiedCalls: 513, mismatchCalls: 47,
-    avgLatency: 3.4,
-    correctionCount: 47, correctionByLevel: { 위험: 18, 주의: 23, 정상: 6 },
-    dailyCalls: [180, 210, 240, 290, 328],
-    dailyLabels: ['1월', '2월', '3월', '4월', '5월'],
-  },
+const AI_STATS = {
+  aiAccuracy: 91.3,
+  verifiedCalls: 23,
+  mismatchCalls: 2,
+  correctionCount: 2,
+  correctionByLevel: { 위험: 1, 주의: 1, 정상: 0 },
 };
+
+const EMPTY_CALL_STATS = {
+  totalCalls: 0,
+  successCalls: 0,
+  missedCalls: 0,
+  callSuccessRate: 0,
+  dailyCalls: [0, 0, 0, 0, 0, 0, 0],
+  dailyLabels: ['월', '화', '수', '목', '금', '토', '일'],
+};
+
+function getLast7Dates() {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+  });
+}
 
 function CircleProgress({ percent, size = 88, strokeWidth = 7, color, children }) {
   const r = (size - strokeWidth * 2) / 2;
@@ -54,7 +50,7 @@ function CircleProgress({ percent, size = 88, strokeWidth = 7, color, children }
 function MiniBar({ value, max, color }) {
   return (
     <div style={{ height: '5px', backgroundColor: 'var(--color-border)', borderRadius: '99px', overflow: 'hidden', flex: 1 }}>
-      <div style={{ width: `${(value / max) * 100}%`, height: '100%', backgroundColor: color, borderRadius: '99px', transition: 'width 0.7s ease' }} />
+      <div style={{ width: `${max > 0 ? (value / max) * 100 : 0}%`, height: '100%', backgroundColor: color, borderRadius: '99px', transition: 'width 0.7s ease' }} />
     </div>
   );
 }
@@ -67,7 +63,7 @@ function BarChart({ values, labels, color }) {
         <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
           <div style={{
             width: '100%', backgroundColor: color, borderRadius: '3px 3px 0 0',
-            height: `${(v / max) * 100}%`, minHeight: '3px',
+            height: `${(v / max) * 100}%`, minHeight: v > 0 ? '3px' : '0',
             transition: 'height 0.7s ease', opacity: 0.85,
           }} />
           <span style={{ fontSize: '0.5625rem', color: 'var(--color-text-light)', whiteSpace: 'nowrap' }}>{labels[i]}</span>
@@ -78,34 +74,52 @@ function BarChart({ values, labels, color }) {
 }
 
 export default function StatsPanel() {
-  const [period, setPeriod] = useState('이번 달');
-  const d = STATS[period];
+  const [callStats, setCallStats] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const dates = getLast7Dates();
+
+    Promise.all(dates.map(date => fetchTodayCallStatus(date)))
+      .then(results => {
+        const dailyCalls = results.map(r => r.total || 0);
+        const dailyLabels = dates.map(date => {
+          const d = new Date(`${date}T00:00:00+09:00`);
+          return DAY_LABELS[d.getDay()];
+        });
+        const totalCalls = dailyCalls.reduce((a, b) => a + b, 0);
+        const missedCalls = results.reduce((acc, r) => acc + (r.riskCounts?.미응답 || 0), 0);
+        const successCalls = totalCalls - missedCalls;
+        const callSuccessRate = totalCalls > 0 ? (successCalls / totalCalls) * 100 : 0;
+
+        setCallStats({ totalCalls, successCalls, missedCalls, callSuccessRate, dailyCalls, dailyLabels });
+      })
+      .catch(err => console.error('통계 로딩 실패:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const d = { ...AI_STATS, ...(callStats || EMPTY_CALL_STATS) };
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
         <div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.025em' }}>통계</h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-            시스템 운영 현황을 수치로 확인합니다.
+            최근 7일 시스템 운영 현황을 수치로 확인합니다.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {PERIODS.map(p => (
-            <button key={p} onClick={() => setPeriod(p)}
-              className={`btn ${period === p ? 'btn-primary' : 'btn-outline'}`}
-              style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)' }}>
-              {p}
-            </button>
-          ))}
-        </div>
+        {isLoading && (
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ width: '14px', height: '14px', border: '2px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            불러오는 중...
+          </div>
+        )}
       </div>
 
-      {/* Row 1: 3 core KPIs */}
+      {/* Row 1: 2 core KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
 
-        {/* 안부 전화 성공률 */}
         <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           <CircleProgress percent={d.callSuccessRate} color="var(--color-primary)">
             <div style={{ fontSize: '1.0625rem', fontWeight: 800, color: 'var(--color-primary)', lineHeight: 1 }}>{d.callSuccessRate.toFixed(1)}</div>
@@ -131,7 +145,6 @@ export default function StatsPanel() {
           </div>
         </div>
 
-        {/* AI 위험 탐지 정확도 */}
         <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           <CircleProgress percent={d.aiAccuracy} color="var(--color-success)">
             <div style={{ fontSize: '1.0625rem', fontWeight: 800, color: 'var(--color-success-hover)', lineHeight: 1 }}>{d.aiAccuracy.toFixed(1)}</div>
@@ -150,32 +163,17 @@ export default function StatsPanel() {
                 <MiniBar value={d.mismatchCalls} max={d.verifiedCalls} color="var(--color-danger)" />
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-danger)', flexShrink: 0 }}>{d.mismatchCalls}</span>
               </div>
-              <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-light)', marginTop: '0.125rem' }}>
-                AI 위험 탐지 정확도
+              <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-light)', marginTop: '0.125rem', fontStyle: 'italic' }}>
+                * 참고용 수치 (정정 API 연동 후 업데이트 예정)
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* 평균 처리 시간 */}
-        <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.375rem' }}>평균 처리·지연 시간</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
-              STT → AI 감정 분석 → 대시보드 반영
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
-            <span style={{ fontSize: '3rem', fontWeight: 900, color: d.avgLatency <= 5 ? 'var(--color-warning-hover)' : 'var(--color-danger)', lineHeight: 1 }}>{d.avgLatency}</span>
-            <span style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>초</span>
           </div>
         </div>
       </div>
 
       {/* Row 2: 정정 현황 + 발신 추이 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
 
-        {/* 위험도 정정 현황 */}
         <div className="card" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
             <div>
@@ -206,18 +204,16 @@ export default function StatsPanel() {
               </div>
             ))}
           </div>
-          <div style={{ marginTop: '1rem', fontSize: '0.6875rem', color: 'var(--color-text-light)', lineHeight: 1.6 }}>
-            정정 비율 {d.correctionCount > 0 && d.totalCalls > 0 ? ((d.correctionCount / d.totalCalls) * 100).toFixed(1) : '0.0'}%
-            — AI 자동 분류 대비 관리자 개입 빈도
+          <div style={{ marginTop: '1rem', fontSize: '0.6875rem', color: 'var(--color-text-light)', fontStyle: 'italic' }}>
+            * 참고용 수치 (정정 API 연동 후 업데이트 예정)
           </div>
         </div>
 
-        {/* 발신 추이 */}
         <div className="card" style={{ padding: '1.5rem' }}>
           <div style={{ marginBottom: '1.25rem' }}>
             <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>발신 추이</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-              기간별 발신 건수 분포
+              최근 7일 일별 발신 건수
             </div>
           </div>
           <BarChart values={d.dailyCalls} labels={d.dailyLabels} color="var(--color-primary)" />
@@ -241,7 +237,6 @@ export default function StatsPanel() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }

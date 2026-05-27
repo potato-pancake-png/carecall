@@ -5,7 +5,7 @@ import RiskStatusPanel from './components/RiskStatusPanel';
 import AdminAccountsScreen from './components/admin/AdminAccountsScreen';
 import StatsPanel from './components/StatsPanel';
 import MyAccountScreen from './components/admin/MyAccountScreen';
-import { RECIPIENTS as INITIAL_RECIPIENTS, TODAY_STATUS, TODAY_RECORDS, getCallHistory } from './mockData';
+import { fetchRecipients, fetchTodayCallStatus, fetchCallHistory, createRecipient } from './api/dashboardApi';
 import { ADMIN_ACCOUNTS } from './components/admin/adminMockData';
 
 class ErrorBoundary extends Component {
@@ -67,7 +67,6 @@ function LoginScreen({ onLogin }) {
 
   function handleSubmit(event) {
     event.preventDefault();
-    // Allow immediate login for development convenience
     setError('');
     onLogin({ email: email.trim() || 'admin@carecall.kr', password: password.trim() || 'password' });
   }
@@ -149,25 +148,46 @@ function App() {
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [callHistory, setCallHistory] = useState([]);
   const [adminAccounts, setAdminAccounts] = useState(ADMIN_ACCOUNTS);
-  const [recipients, setRecipients] = useState(INITIAL_RECIPIENTS);
+  const [recipients, setRecipients] = useState([]);
+  const [todayStatus, setTodayStatus] = useState(null);
+  const [todayRecords, setTodayRecords] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dashboardFilter, setDashboardFilter] = useState('전체');
 
-  const currentUser = adminAccounts[0]; 
+  const currentUser = adminAccounts[0];
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setIsLoading(true);
+    Promise.all([fetchRecipients(), fetchTodayCallStatus()])
+      .then(([recs, today]) => {
+        setRecipients(recs);
+        setTodayStatus({ date: today.date, total: today.total, riskCounts: today.riskCounts });
+        setTodayRecords(today.records || []);
+      })
+      .catch((err) => console.error('데이터 로딩 실패:', err))
+      .finally(() => setIsLoading(false));
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    // Reset filter when going to Recipient List to show everyone by default
     if (tab === '대상자 목록') {
       setDashboardFilter('전체');
     }
   };
 
-  const handleRecipientSelect = (r) => {
+  const handleRecipientSelect = async (r) => {
     setSelectedRecipient(r);
-    setCallHistory(getCallHistory(r.recipientId));
+    try {
+      const history = await fetchCallHistory(r.name || r.recipientName);
+      setCallHistory(history);
+    } catch (err) {
+      console.error('통화 이력 로딩 실패:', err);
+      setCallHistory([]);
+    }
   };
 
   const filteredRecipients = recipients.filter(r => {
@@ -176,7 +196,7 @@ function App() {
     return matchesSearch && matchesFilter;
   });
 
-  const filteredTodayRecords = TODAY_RECORDS.filter(r => {
+  const filteredTodayRecords = todayRecords.filter(r => {
     if (dashboardFilter === '전체') return true;
     if (dashboardFilter === '미응답') return r.status === '미응답' || r.riskLevel === '미응답';
     return r.riskLevel === dashboardFilter;
@@ -218,8 +238,8 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             {currentView === 'dashboard' && (
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <svg 
-                  style={{ position: 'absolute', left: '0.875rem', color: 'var(--color-text-light)', pointerEvents: 'none' }} 
+                <svg
+                  style={{ position: 'absolute', left: '0.875rem', color: 'var(--color-text-light)', pointerEvents: 'none' }}
                   width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                 >
                   <circle cx="11" cy="11" r="8"></circle>
@@ -245,7 +265,7 @@ function App() {
           {currentView === 'dashboard' ? (
              activeTab === '위험도 현황' ? (
                <RiskStatusPanel
-                  todayStatus={TODAY_STATUS}
+                  todayStatus={todayStatus}
                   atRiskList={filteredTodayRecords}
                   activeFilter={dashboardFilter}
                   onFilterChange={setDashboardFilter}
@@ -260,8 +280,17 @@ function App() {
              ) : (
                <RecipientList
                  recipients={filteredRecipients}
+                 isLoading={isLoading}
                  onSelect={handleRecipientSelect}
-                 onAdd={(r) => setRecipients([...recipients, r])}
+                 onAdd={async (r) => {
+                   try {
+                     await createRecipient(r);
+                     const updated = await fetchRecipients();
+                     setRecipients(updated);
+                   } catch (err) {
+                     console.error('대상자 등록 실패:', err);
+                   }
+                 }}
                  onUpdate={(r) => setRecipients(recipients.map(i => i.recipientId === r.recipientId ? r : i))}
                  onDelete={(id) => setRecipients(recipients.filter(r => r.recipientId !== id))}
                  onManualCall={(r) => console.log(`수동 발신 요청: ${r.name} (${r.phoneNumber})`)}

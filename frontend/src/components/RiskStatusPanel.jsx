@@ -432,7 +432,7 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-            {activeFilter === '전체' ? '집중 모니터링 대상' : `${activeFilter} 판정 대상자`}
+            {activeFilter === '전체' ? '모니터링 현황' : `${activeFilter} 판정 대상자`}
           </h2>
           <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>{atRiskList.length}명</span>
           {Object.keys(corrections).length > 0 && (
@@ -467,11 +467,11 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
             <p style={{ fontWeight: 700, fontSize: '1.0625rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>
               {activeFilter === '전체' ? '모든 대상자가 안전합니다' : `${activeFilter} 판정 대상자가 없습니다`}
             </p>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', lineHeight: 1.5, maxWidth: '320px', margin: '0 auto' }}>
-              {activeFilter === '전체'
-                ? '현재 위험 또는 주의 판정을 받은 대상자가 없습니다. 정기 모니터링은 계속됩니다.'
-                : `현재 "${activeFilter}" 상태에 해당하는 대상자가 없습니다.`}
-            </p>
+            {activeFilter !== '전체' && (
+              <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', lineHeight: 1.5, maxWidth: '320px', margin: '0 auto' }}>
+                {`현재 "${activeFilter}" 상태에 해당하는 대상자가 없습니다.`}
+              </p>
+            )}
             {activeFilter !== '전체' && (
               <button
                 className="btn btn-outline"

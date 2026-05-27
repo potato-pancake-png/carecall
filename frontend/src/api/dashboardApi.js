@@ -1,38 +1,47 @@
 'use strict';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const BASE_URL = '/api';
 
-/**
- * 공통 fetch 래퍼 — 에러 응답을 Error로 변환한다.
- */
-async function apiFetch(path) {
-  const res = await fetch(`${BASE_URL}${path}`);
+async function apiFetch(path, options) {
+  const res = await fetch(`${BASE_URL}${path}`, options);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `HTTP ${res.status}`);
+    throw new Error(body.error || body.message || `HTTP ${res.status}`);
   }
   return res.json();
 }
 
-/** 대상자 목록 조회 */
+function normalizeRecipient(r) {
+  return { ...r, name: r.recipientName };
+}
+
 export async function fetchRecipients() {
   const data = await apiFetch('/recipients');
-  return data.recipients || [];
+  return (data.recipients || []).map(normalizeRecipient);
 }
 
-/** 오늘의 통화 현황 조회 */
-export async function fetchTodayCallStatus() {
-  return apiFetch('/calls/today');
+export async function fetchTodayCallStatus(date) {
+  const query = date ? `?date=${date}` : '';
+  return apiFetch(`/calls/today${query}`);
 }
 
-/** 위험군 목록 조회 */
-export async function fetchAtRiskList() {
-  const data = await apiFetch('/calls/at-risk');
-  return data.atRisk || [];
-}
-
-/** 특정 대상자 통화 이력 조회 */
-export async function fetchCallHistory(recipientId) {
-  const data = await apiFetch(`/calls/history/${recipientId}`);
+export async function fetchCallHistory(recipientName) {
+  const data = await apiFetch(`/calls/history/${encodeURIComponent(recipientName)}`);
   return data.history || [];
+}
+
+export async function createRecipient(recipient) {
+  return apiFetch('/recipients', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipientName: recipient.name,
+      age: Number(recipient.age) || 0,
+      phoneNumber: recipient.phoneNumber,
+      address: recipient.address || '',
+      memo: recipient.memo || '',
+      autoCallTime: recipient.autoCallTime || '09:00',
+      autoCallEnabled: Boolean(recipient.autoCallEnabled),
+    }),
+  });
 }
