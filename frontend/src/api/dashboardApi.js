@@ -1,14 +1,15 @@
 'use strict';
 
-import { getAccessToken } from '../auth/cognitoAuth';
+// import { getAccessToken } from '../auth/cognitoAuth'; // Direct Auth (주석처리)
+import { userManager } from '../auth/userManager'; // OIDC
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 async function apiFetch(path, options = {}) {
-  const token = await getAccessToken();
+  const user = await userManager.getUser();
   const headers = {
     ...options.headers,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {}),
   };
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   if (!res.ok) {
