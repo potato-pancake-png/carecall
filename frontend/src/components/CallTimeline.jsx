@@ -20,26 +20,25 @@ function SentimentLineChart({ history, isLoading, error }) {
   const data = history.filter(r => r.status === '응답').slice(0, 10).reverse();
 
   if (isLoading) return (
-    <div style={{ padding: '1.5rem', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', marginBottom: '2rem', border: '1px solid var(--color-border)', textAlign: 'center' }}>
-      <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2.5px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    <div style={{ height: '160px', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', marginBottom: '2rem', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '24px', height: '24px', border: '2.5px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
     </div>
   );
 
-  if (error) return null;
-
-  if (data.length < 2) return (
-    <div style={{ padding: '1.5rem 1.75rem', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', marginBottom: '2rem', border: '1px solid var(--color-border)' }}>
-      <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', margin: 0 }}>감정 지수 추이는 2회 이상 응답 시 표시됩니다.</p>
+  if (error || data.length < 2) return (
+    <div style={{ padding: '1.25rem 1.5rem', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', marginBottom: '2rem', border: '1px solid var(--color-border)' }}>
+      <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>감정 지수 추이는 2회 이상 응답 시 표시됩니다.</span>
     </div>
   );
 
-  const W = 560, H = 130, PL = 12, PR = 12, PT = 20, PB = 12;
+  const W = 560, H = 150, PL = 28, PR = 28, PT = 24, PB = 10;
   const cW = W - PL - PR, cH = H - PT - PB;
 
   const scores = data.map(d => d.sentimentScore ?? 50);
   const latest = scores[scores.length - 1];
   const trendDiff = latest - scores[scores.length - 2];
   const zc = s => s >= 70 ? '#10b981' : s >= 40 ? '#f59e0b' : '#ef4444';
+  const lineColor = zc(latest);
 
   const gx = i => PL + (i / (data.length - 1)) * cW;
   const gy = s => PT + cH * (1 - s / 100);
@@ -50,53 +49,69 @@ function SentimentLineChart({ history, isLoading, error }) {
     const cx = (pts[i - 1].x + pts[i].x) / 2;
     linePath += ` C${cx},${pts[i - 1].y} ${cx},${pts[i].y} ${pts[i].x},${pts[i].y}`;
   }
-  const areaPath = `${linePath} L${pts[pts.length - 1].x},${PT + cH} L${pts[0].x},${PT + cH}Z`;
-  const lineColor = zc(latest);
+  const areaPath = `${linePath} L${pts[pts.length-1].x},${PT+cH} L${pts[0].x},${PT+cH}Z`;
 
   return (
-    <div style={{ backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-border)', marginBottom: '2rem', padding: '1.25rem 1.5rem' }}>
+    <div style={{ backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-border)', marginBottom: '2rem', overflow: 'hidden' }}>
 
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text-muted)' }}>감정 지수 추이</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.25rem', fontWeight: 900, color: lineColor }}>{latest}</span>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: trendDiff >= 0 ? '#10b981' : '#ef4444' }}>
+      <div style={{ padding: '1rem 1.375rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)' }}>
+        <div>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-main)' }}>감정 지수 추이</div>
+          <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-light)', marginTop: '0.1rem' }}>최근 {data.length}회 통화</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.375rem' }}>
+          <span style={{ fontSize: '1.75rem', fontWeight: 900, color: lineColor, lineHeight: 1 }}>{latest}</span>
+          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: trendDiff >= 0 ? '#10b981' : '#ef4444' }}>
             {trendDiff >= 0 ? '↑' : '↓'}{Math.abs(trendDiff)}
           </span>
         </div>
       </div>
 
       {/* 차트 */}
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', height: '100px' }}>
-        <defs>
-          <linearGradient id="slt-g" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={lineColor} stopOpacity="0.15" />
-            <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={areaPath} fill="url(#slt-g)" />
-        <path d={linePath} fill="none" stroke={lineColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        {pts.map((pt, i) => (
-          <circle key={i} cx={pt.x} cy={pt.y} r="4.5" fill="white" stroke={zc(pt.s)} strokeWidth="2" />
-        ))}
-      </svg>
+      <div style={{ padding: '0.75rem 1.375rem 0' }}>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', height: '120px' }}>
+          <defs>
+            <linearGradient id="slt-g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={lineColor} stopOpacity="0.18" />
+              <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <line x1={PL} y1={gy(50)} x2={PL+cW} y2={gy(50)} stroke="var(--color-border)" strokeWidth="1" strokeDasharray="4,3" />
+          <path d={areaPath} fill="url(#slt-g)" />
+          <path d={linePath} fill="none" stroke={lineColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          {pts.map((pt, i) => {
+            const c = zc(pt.s);
+            const labelY = pt.s >= 82 ? pt.y + 16 : pt.y - 9;
+            return (
+              <g key={i}>
+                <text x={pt.x} y={labelY} textAnchor="middle" fontSize="11" fontWeight="800" fill={c}>{pt.s}</text>
+                <circle cx={pt.x} cy={pt.y} r="5" fill="white" stroke={c} strokeWidth="2.5" />
+                <circle cx={pt.x} cy={pt.y} r="2.5" fill={c} />
+              </g>
+            );
+          })}
+        </svg>
 
-      {/* 날짜 */}
-      <div style={{ position: 'relative', height: '20px', marginTop: '0.375rem' }}>
-        {data.map((d, i) => (
-          <span key={i} style={{
-            position: 'absolute',
-            left: `${(gx(i) / W * 100).toFixed(1)}%`,
-            transform: 'translateX(-50%)',
-            fontSize: '0.6875rem',
-            fontWeight: 600,
-            color: 'var(--color-text-light)',
-            whiteSpace: 'nowrap',
-          }}>
-            {new Date(d.callTime).getMonth() + 1}/{new Date(d.callTime).getDate()}
-          </span>
-        ))}
+        {/* 날짜 */}
+        <div style={{ position: 'relative', height: '28px', marginTop: '0.25rem' }}>
+          {data.map((d, i) => {
+            const dt = new Date(d.callTime);
+            return (
+              <span key={i} style={{
+                position: 'absolute',
+                left: `${(gx(i) / W * 100).toFixed(1)}%`,
+                transform: 'translateX(-50%)',
+                fontSize: '0.6875rem',
+                fontWeight: 600,
+                color: 'var(--color-text-light)',
+                whiteSpace: 'nowrap',
+              }}>
+                {dt.getMonth()+1}/{dt.getDate()}
+              </span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
