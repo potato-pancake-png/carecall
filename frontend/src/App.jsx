@@ -7,7 +7,7 @@ import StatsPanel from './components/StatsPanel';
 import MyAccountScreen from './components/admin/MyAccountScreen';
 import { fetchRecipients, fetchTodayCallStatus, fetchCallHistory, createRecipient } from './api/dashboardApi';
 import { ADMIN_ACCOUNTS } from './components/admin/adminMockData';
-import { userManager, signOutRedirect } from './auth/userManager';
+import { signIn, signOut, getCurrentSession } from './auth/cognitoAuth';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -61,7 +61,26 @@ function getAvatarLabel(name, email) {
   return (name?.trim()?.[0] || email?.trim()?.[0] || 'A').toUpperCase();
 }
 
-function LoginScreen() {
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    try {
+      await signIn(email.trim(), password);
+      onLogin();
+    } catch (err) {
+      setError(err.message === 'Incorrect username or password.' ? '이메일 또는 비밀번호가 올바르지 않습니다.' : '로그인에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <div className="login-page">
       <div className="login-card">
@@ -72,13 +91,20 @@ function LoginScreen() {
           <h1 className="login-title">CareCall</h1>
           <p className="login-subtitle">관리자 통합 대시보드</p>
         </div>
-        <button
-          className="btn btn-primary"
-          style={{ width: '100%', padding: '0.75rem', marginTop: '1.5rem' }}
-          onClick={() => userManager.signinRedirect()}
-        >
-          로그인
-        </button>
+        <form className="form-group" style={{ gap: '1.5rem' }} onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">관리자 이메일</label>
+            <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@carecall.kr" autoComplete="email" required aria-label="관리자 이메일" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">비밀번호</label>
+            <input type="password" className="form-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" required aria-label="비밀번호" />
+          </div>
+          {error && <p style={{ margin: 0, color: 'var(--color-danger)', fontSize: '0.875rem', textAlign: 'center' }}>{error}</p>}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem' }} disabled={isLoading}>
+            {isLoading ? '로그인 중...' : '로그인'}
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -143,8 +169,8 @@ function App() {
   const currentUser = adminAccounts.find(a => a.email === cognitoUser?.profile?.email) || adminAccounts[0];
 
   useEffect(() => {
-    userManager.getUser().then(user => {
-      setCognitoUser(user);
+    getCurrentSession().then(session => {
+      setCognitoUser(session);
       setAuthLoading(false);
     }).catch(() => setAuthLoading(false));
   }, []);
@@ -170,7 +196,7 @@ function App() {
       <div style={{ width: '36px', height: '36px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
     </div>
   );
-  if (!cognitoUser) return <LoginScreen />;
+  if (!cognitoUser) return <LoginScreen onLogin={() => getCurrentSession().then(setCognitoUser)} />;
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -249,7 +275,7 @@ function App() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <AccountMenu currentUser={currentUser} currentView={currentView} onNavigate={setCurrentView} onLogout={signOutRedirect} />
+            <AccountMenu currentUser={currentUser} currentView={currentView} onNavigate={setCurrentView} onLogout={() => { signOut(); setCognitoUser(null); }} />
           </div>
         </div>
       </header>
