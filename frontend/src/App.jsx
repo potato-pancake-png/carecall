@@ -136,6 +136,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('위험도 현황');
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [callHistory, setCallHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [adminAccounts, setAdminAccounts] = useState(ADMIN_ACCOUNTS);
   const [recipients, setRecipients] = useState([]);
   const [todayStatus, setTodayStatus] = useState({ date: null, total: 0, riskCounts: { 정상: 0, 주의: 0, 위험: 0, 미응답: 0 } });
@@ -232,13 +233,16 @@ function App() {
   };
 
   const handleRecipientSelect = async (r) => {
+    setCallHistory([]);
+    setHistoryLoading(true);
     setSelectedRecipient(r);
     try {
       const history = await fetchCallHistory(r.name || r.recipientName);
       setCallHistory(history);
     } catch (err) {
       console.error('통화 이력 로딩 실패:', err);
-      setCallHistory([]);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -391,6 +395,7 @@ function App() {
       {selectedRecipient && (
         <CallTimeline
           history={callHistory}
+          isLoading={historyLoading}
           recipientName={selectedRecipient.name}
           recipientPhoto={selectedRecipient.photo}
           onClose={() => setSelectedRecipient(null)}

@@ -160,7 +160,7 @@ function ChatView({ record, recipientName, onBack }) {
   );
 }
 
-export default function CallTimeline({ history, recipientName, onClose, recipientPhoto }) {
+export default function CallTimeline({ history, isLoading, recipientName, onClose, recipientPhoto }) {
   const [selectedRecord, setSelectedRecord] = useState(null);
 
   if (selectedRecord) {
@@ -192,10 +192,15 @@ export default function CallTimeline({ history, recipientName, onClose, recipien
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '2.5rem', backgroundColor: 'var(--color-bg-body)' }}>
-          <SentimentLineChart history={history} />
+          <SentimentLineChart history={history} isLoading={isLoading} />
 
           <h3 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--color-text-main)' }}>타임라인</h3>
 
+          {isLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '4rem 0' }}>
+              <div style={{ width: '28px', height: '28px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            </div>
+          ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {history.map((record) => {
               const isUnanswered = record.status === '미응답';
@@ -239,6 +244,7 @@ export default function CallTimeline({ history, recipientName, onClose, recipien
               );
             })}
           </div>
+          )}
         </div>
       </div>
     </div>
