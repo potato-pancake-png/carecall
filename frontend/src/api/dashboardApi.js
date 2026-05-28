@@ -7,9 +7,10 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 async function apiFetch(path, options = {}) {
   const user = await userManager.getUser();
+  const token = user?.id_token || user?.access_token;
   const headers = {
     ...options.headers,
-    ...(user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   if (!res.ok) {
