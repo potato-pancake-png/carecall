@@ -144,6 +144,12 @@ function App() {
   const [apiError, setApiError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dashboardFilter, setDashboardFilter] = useState('전체');
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const currentUser = adminAccounts.find(a => a.email === cognitoUser?.profile?.email) || adminAccounts[0];
 
@@ -219,6 +225,21 @@ function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 2000,
+          backgroundColor: 'var(--color-text-main)', color: 'white',
+          padding: '0.875rem 1.25rem', borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)', fontSize: '0.875rem', fontWeight: 500,
+          display: 'flex', alignItems: 'center', gap: '0.625rem',
+          animation: 'slideUp 0.3s ease-out',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {toast}
+        </div>
+      )}
       <header className="app-header glass">
         <div className="container app-header-content">
           <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
@@ -302,8 +323,10 @@ function App() {
                      await createRecipient(r);
                      const updated = await fetchRecipients();
                      setRecipients(updated);
+                     showToast(`${r.name}님이 등록되었습니다.`);
                    } catch (err) {
                      console.error('대상자 등록 실패:', err);
+                     showToast(`등록 실패: ${err.message}`);
                    }
                  }}
                  onUpdate={async (r) => {
@@ -318,8 +341,10 @@ function App() {
                        autoCallEnabled: r.autoCallEnabled,
                      });
                      setRecipients(prev => prev.map(i => i.recipientId === r.recipientId ? { ...i, ...r } : i));
+                     showToast(`${r.name}님 정보가 수정되었습니다.`);
                    } catch (err) {
                      console.error('대상자 수정 실패:', err);
+                     showToast(`수정 실패: ${err.message}`);
                    }
                  }}
                  onDelete={(id) => setRecipients(recipients.filter(r => r.recipientId !== id))}
