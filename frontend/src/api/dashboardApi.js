@@ -9,7 +9,7 @@ async function apiFetch(path, options = {}) {
   const user = await userManager.getUser();
   const headers = {
     ...options.headers,
-    ...(user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {}),
+    ...(user?.id_token ? { Authorization: `Bearer ${user.id_token}` } : (user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {})),
   };
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   if (!res.ok) {
