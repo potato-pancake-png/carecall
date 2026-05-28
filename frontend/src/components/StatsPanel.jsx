@@ -3,11 +3,7 @@ import { fetchTodayCallStatus, fetchCorrectionStats } from '../api/dashboardApi'
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
-const AI_STATS = {
-  aiAccuracy: 91.3,
-  verifiedCalls: 23,
-  mismatchCalls: 2,
-};
+const AI_STATS = {};
 
 const EMPTY_CORRECTION_STATS = {
   correctionCount: 0,
@@ -163,27 +159,35 @@ export default function StatsPanel() {
           </div>
         </div>
 
-        <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <CircleProgress percent={d.aiAccuracy} color="var(--color-success)">
-            <div style={{ fontSize: '1.0625rem', fontWeight: 800, color: 'var(--color-success-hover)', lineHeight: 1 }}>{d.aiAccuracy.toFixed(1)}</div>
-            <div style={{ fontSize: '0.5625rem', color: 'var(--color-text-muted)' }}>%</div>
-          </CircleProgress>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.625rem' }}>AI 위험 탐지 정확도</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.625rem' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0 }}>일치</span>
-                <MiniBar value={d.verifiedCalls - d.mismatchCalls} max={d.verifiedCalls} color="var(--color-success)" />
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-success-hover)', flexShrink: 0 }}>{d.verifiedCalls - d.mismatchCalls}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.625rem' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0 }}>불일치</span>
-                <MiniBar value={d.mismatchCalls} max={d.verifiedCalls} color="var(--color-danger)" />
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-danger)', flexShrink: 0 }}>{d.mismatchCalls}</span>
+        {(() => {
+          const matched = Math.max(0, d.successCalls - d.correctionCount);
+          const mismatched = d.correctionCount;
+          const total = d.successCalls;
+          const accuracy = total > 0 ? (matched / total) * 100 : 0;
+          return (
+            <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <CircleProgress percent={accuracy} color="var(--color-success)">
+                <div style={{ fontSize: '1.0625rem', fontWeight: 800, color: 'var(--color-success-hover)', lineHeight: 1 }}>{accuracy.toFixed(1)}</div>
+                <div style={{ fontSize: '0.5625rem', color: 'var(--color-text-muted)' }}>%</div>
+              </CircleProgress>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.625rem' }}>AI 위험 탐지 정확도</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.625rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0, whiteSpace: 'nowrap' }}>일치 (정정 X)</span>
+                    <MiniBar value={matched} max={total || 1} color="var(--color-success)" />
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-success-hover)', flexShrink: 0 }}>{matched}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.625rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0, whiteSpace: 'nowrap' }}>불일치 (정정 O)</span>
+                    <MiniBar value={mismatched} max={total || 1} color="var(--color-danger)" />
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-danger)', flexShrink: 0 }}>{mismatched}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
       </div>
 
       {/* Row 2: 정정 현황 + 발신 추이 */}
