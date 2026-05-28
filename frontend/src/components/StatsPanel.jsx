@@ -174,12 +174,12 @@ export default function StatsPanel() {
                 <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.625rem' }}>AI 위험 탐지 정확도</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.625rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0 }}>일치</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0, width: '42px' }}>일치</span>
                     <MiniBar value={matched} max={total || 1} color="var(--color-success)" />
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-success-hover)', flexShrink: 0 }}>{matched}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.625rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0 }}>불일치</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0, width: '42px' }}>불일치</span>
                     <MiniBar value={mismatched} max={total || 1} color="var(--color-danger)" />
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-danger)', flexShrink: 0 }}>{mismatched}</span>
                   </div>
