@@ -7,8 +7,11 @@ const AI_STATS = {
   aiAccuracy: 91.3,
   verifiedCalls: 23,
   mismatchCalls: 2,
-  correctionCount: 2,
-  correctionByLevel: { 위험: 1, 주의: 1, 정상: 0 },
+};
+
+const EMPTY_CORRECTION_STATS = {
+  correctionCount: 0,
+  correctionByLevel: { 위험: 0, 주의: 0, 정상: 0 },
 };
 
 const EMPTY_CALL_STATS = {
@@ -113,7 +116,7 @@ export default function StatsPanel() {
     }).finally(() => setIsLoading(false));
   }, []);
 
-  const d = { ...AI_STATS, ...(correctionStats || {}), ...(callStats || EMPTY_CALL_STATS) };
+  const d = { ...AI_STATS, ...EMPTY_CORRECTION_STATS, ...(correctionStats || {}), ...(callStats || EMPTY_CALL_STATS) };
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
