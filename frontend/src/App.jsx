@@ -163,7 +163,10 @@ function App() {
   useEffect(() => {
     if (!cognitoUser) return;
     setIsLoading(true);
-    Promise.allSettled([fetchRecipients(), fetchTodayCallStatus()])
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+    Promise.allSettled([fetchRecipients(), fetchTodayCallStatus(yesterdayStr)])
       .then(([recsResult, todayResult]) => {
         if (recsResult.status === 'fulfilled') {
           setRecipients(recsResult.value);
