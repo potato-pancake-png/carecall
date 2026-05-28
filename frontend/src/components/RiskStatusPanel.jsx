@@ -18,12 +18,12 @@ function SpinnerIcon({ size = 14 }) {
   );
 }
 
-function CallConfirmPopover({ recipient, onConfirm, onCancel, position = 'above' }) {
+function CallConfirmPopover({ recipient, onConfirm, onCancel, anchorPos }) {
   return (
     <div style={{
-      position: 'absolute',
-      ...(position === 'above' ? { bottom: 'calc(100% + 8px)' } : { top: 'calc(100% + 8px)' }),
-      left: '50%',
+      position: 'fixed',
+      top: anchorPos.top,
+      left: anchorPos.left,
       transform: 'translateX(-50%)',
       backgroundColor: 'white',
       border: '1px solid var(--color-border)',
@@ -31,7 +31,7 @@ function CallConfirmPopover({ recipient, onConfirm, onCancel, position = 'above'
       boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.08)',
       padding: '1rem',
       width: '200px',
-      zIndex: 30,
+      zIndex: 2000,
       animation: 'slideUp 0.15s cubic-bezier(0.16,1,0.3,1)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
@@ -370,12 +370,19 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
   const [correctionTarget, setCorrectionTarget] = useState(null);
   const [toast, setToast] = useState(null);
   const [confirmCallId, setConfirmCallId] = useState(null);
+  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
   const [callingId, setCallingId] = useState(null);
 
   const handleManualCallClick = useCallback((r, e) => {
     e.stopPropagation();
-    setConfirmCallId(prev => prev === r.contactId ? null : r.contactId);
-  }, []);
+    if (confirmCallId === r.contactId) {
+      setConfirmCallId(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setPopoverPos({ top: rect.bottom + 8, left: rect.left + rect.width / 2 });
+      setConfirmCallId(r.contactId);
+    }
+  }, [confirmCallId]);
 
   const handleConfirmCall = useCallback((r) => {
     setConfirmCallId(null);
@@ -606,7 +613,7 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
                               recipient={r}
                               onConfirm={() => handleConfirmCall(r)}
                               onCancel={handleClosePopover}
-                              position="below"
+                              anchorPos={popoverPos}
                             />
                           )}
                         </div>
