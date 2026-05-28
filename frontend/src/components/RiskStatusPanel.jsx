@@ -1,86 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { sortByType } from '../utils/sort';
 import { createCorrection } from '../api/dashboardApi';
-
-function PhoneIcon({ size = 14 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 12 19.79 19.79 0 0 1 1.04 3.36 2 2 0 0 1 3 1.14h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-    </svg>
-  );
-}
-
-function SpinnerIcon({ size = 14 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 0.8s linear infinite' }}>
-      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-    </svg>
-  );
-}
-
-function CallConfirmPopover({ recipient, onConfirm, onCancel, anchorPos }) {
-  return (
-    <div style={{
-      position: 'fixed',
-      top: anchorPos.top,
-      left: anchorPos.left,
-      transform: 'translateX(-50%)',
-      backgroundColor: 'white',
-      border: '1px solid var(--color-border)',
-      borderRadius: 'var(--radius-lg)',
-      boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.08)',
-      padding: '1rem',
-      width: '200px',
-      zIndex: 2000,
-      animation: 'slideUp 0.15s cubic-bezier(0.16,1,0.3,1)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-        <div style={{
-          width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-          background: 'linear-gradient(135deg, var(--color-success-light), #a7f3d0)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <PhoneIcon size={14} style={{ color: 'var(--color-success-hover)' }} />
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {recipient.recipientName}
-          </div>
-          <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
-            {recipient.phoneNumber}
-          </div>
-        </div>
-      </div>
-      <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
-        지금 수동 발신하시겠습니까?
-      </p>
-      <div style={{ display: 'flex', gap: '0.375rem' }}>
-        <button
-          className="btn"
-          style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', backgroundColor: 'var(--color-success)', color: 'white', borderRadius: 'var(--radius-md)', fontWeight: 700, border: 'none' }}
-          onClick={(e) => { e.stopPropagation(); onConfirm(); }}
-        >
-          발신
-        </button>
-        <button
-          className="btn btn-outline"
-          style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem' }}
-          onClick={(e) => { e.stopPropagation(); onCancel(); }}
-        >
-          취소
-        </button>
-      </div>
-    </div>
-  );
-}
-
-const RISK_CONFIG = {
-  전체: { label: '전체 발신', badgeClass: 'badge-neutral', color: 'var(--color-text-main)', border: 'var(--color-border)' },
-  위험: { label: '위험', badgeClass: 'badge-danger', color: 'var(--color-danger)', border: 'var(--color-danger)' },
-  주의: { label: '주의', badgeClass: 'badge-warning', color: 'var(--color-warning)', border: 'var(--color-warning)' },
-  정상: { label: '정상', badgeClass: 'badge-success', color: 'var(--color-success)', border: 'var(--color-success)' },
-  미응답: { label: '미응답', badgeClass: 'badge-neutral', color: 'var(--color-text-light)', border: 'var(--color-border-dark)' },
-};
+import { RISK_CONFIG } from '../utils/riskConfig';
+import { PhoneIcon, SpinnerIcon, CallConfirmPopover } from './shared';
+import { useManualCall } from '../hooks/useManualCall';
 
 const CORRECTION_LEVEL_CONFIG = {
   위험: { color: 'var(--color-danger)', bg: 'var(--color-danger-light)', badgeClass: 'badge-danger' },
@@ -399,28 +322,8 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
   const [corrections, setCorrections] = useState({});
   const [correctionTarget, setCorrectionTarget] = useState(null);
   const [toast, setToast] = useState(null);
-  const [confirmCallId, setConfirmCallId] = useState(null);
-  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
-  const [callingId, setCallingId] = useState(null);
 
-  const handleManualCallClick = useCallback((r, e) => {
-    e.stopPropagation();
-    if (confirmCallId === r.contactId) {
-      setConfirmCallId(null);
-    } else {
-      const rect = e.currentTarget.getBoundingClientRect();
-      setPopoverPos({ top: rect.bottom + 8, left: rect.left + rect.width / 2 });
-      setConfirmCallId(r.contactId);
-    }
-  }, [confirmCallId]);
-
-  const handleConfirmCall = useCallback((r) => {
-    setConfirmCallId(null);
-    setCallingId(r.contactId);
-    setTimeout(() => setCallingId(null), 2500);
-  }, []);
-
-  const handleClosePopover = useCallback(() => setConfirmCallId(null), []);
+  const { confirmId: confirmCallId, callingId, popoverPos, handleClick: handleManualCallClick, handleConfirm: handleConfirmCall, handleClose: handleClosePopover } = useManualCall(r => r.contactId);
 
   const sortedData = sortByType(atRiskList, sortType, (r) => r.status === '응답', (r) => r.riskLevel);
 

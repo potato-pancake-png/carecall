@@ -1,30 +1,11 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { sortByType } from '../utils/sort';
-
-const RISK_BADGE = {
-  위험: 'badge-danger',
-  주의: 'badge-warning',
-  정상: 'badge-success',
-  미응답: 'badge-neutral',
-};
+import { RISK_CONFIG } from '../utils/riskConfig';
+import { PhoneIcon, SpinnerIcon, CallConfirmPopover } from './shared';
+import { useManualCall } from '../hooks/useManualCall';
 
 const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'%3E%3C/path%3E%3Ccircle cx='12' cy='7' r='4'%3E%3C/circle%3E%3C/svg%3E";
 
-function PhoneIcon({ size = 16, style = {} }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={style}>
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 12 19.79 19.79 0 0 1 1.04 3.36 2 2 0 0 1 3 1.14h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-    </svg>
-  );
-}
-
-function SpinnerIcon({ size = 16 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 0.8s linear infinite' }}>
-      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-    </svg>
-  );
-}
 
 function RecipientSkeleton() {
   const skeletonBar = (width) => ({
@@ -94,73 +75,16 @@ function RecipientSkeleton() {
   );
 }
 
-function CallConfirmPopover({ recipient, onConfirm, onCancel, position = 'above' }) {
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        ...(position === 'above' ? { bottom: 'calc(100% + 8px)' } : { top: 'calc(100% + 8px)' }),
-        right: 0,
-        backgroundColor: 'white',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.08)',
-        padding: '1rem',
-        width: '200px',
-        zIndex: 30,
-        animation: 'slideUp 0.15s cubic-bezier(0.16,1,0.3,1)',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-        <div style={{
-          width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-          background: 'linear-gradient(135deg, var(--color-success-light), #a7f3d0)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <PhoneIcon size={14} style={{ color: 'var(--color-success-hover)' }} />
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {recipient.name}
-          </div>
-          <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
-            {recipient.phoneNumber}
-          </div>
-        </div>
-      </div>
-      <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
-        지금 수동 발신하시겠습니까?
-      </p>
-      <div style={{ display: 'flex', gap: '0.375rem' }}>
-        <button
-          className="btn"
-          style={{
-            flex: 1, fontSize: '0.75rem', padding: '0.5rem',
-            backgroundColor: 'var(--color-success)', color: 'white',
-            borderRadius: 'var(--radius-md)', fontWeight: 700, border: 'none',
-          }}
-          onClick={(e) => { e.stopPropagation(); onConfirm(); }}
-        >
-          발신
-        </button>
-        <button
-          className="btn btn-outline"
-          style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem' }}
-          onClick={(e) => { e.stopPropagation(); onCancel(); }}
-        >
-          취소
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function RecipientList({ recipients, onSelect, onUpdate, onDelete, onAdd, onManualCall, isLoading }) {
   const [sortType, setSortType] = useState('default');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingRecipient, setEditingRecipient] = useState(null);
-  const [confirmCallId, setConfirmCallId] = useState(null);
-  const [callingId, setCallingId] = useState(null);
+
+  const { confirmId: confirmCallId, callingId, handleClick: handleManualCallClick, handleConfirm, handleClose: handleClosePopover } = useManualCall(r => r.recipientId, onManualCall);
+
+  const handleConfirmCall = useCallback((r) => {
+    handleConfirm(r);
+  }, [handleConfirm]);
 
   const sortedRecipients = useMemo(
     () => sortByType(
@@ -192,22 +116,6 @@ export default function RecipientList({ recipients, onSelect, onUpdate, onDelete
 
   const handleEditRecipient = useCallback((r) => {
     setEditingRecipient(r);
-  }, []);
-
-  const handleManualCallClick = useCallback((r, e) => {
-    e.stopPropagation();
-    setConfirmCallId(prev => prev === r.recipientId ? null : r.recipientId);
-  }, []);
-
-  const handleConfirmCall = useCallback((r) => {
-    setConfirmCallId(null);
-    setCallingId(r.recipientId);
-    onManualCall && onManualCall(r);
-    setTimeout(() => setCallingId(null), 2500);
-  }, [onManualCall]);
-
-  const handleClosePopover = useCallback(() => {
-    setConfirmCallId(null);
   }, []);
 
   return (
@@ -315,7 +223,7 @@ export default function RecipientList({ recipients, onSelect, onUpdate, onDelete
 
                         <td style={{ padding: '1.25rem 1rem' }}>
                           {r.lastRiskLevel ? (
-                            <span className={`badge ${RISK_BADGE[r.lastRiskLevel] || 'badge-neutral'}`} style={{ padding: '0.25rem 0.75rem', fontWeight: 700 }}>{r.lastRiskLevel}</span>
+                            <span className={`badge ${RISK_CONFIG[r.lastRiskLevel]?.badgeClass || 'badge-neutral'}`} style={{ padding: '0.25rem 0.75rem', fontWeight: 700 }}>{r.lastRiskLevel}</span>
                           ) : (
                             <span className="badge badge-neutral">기록 없음</span>
                           )}
@@ -450,7 +358,7 @@ export default function RecipientList({ recipients, onSelect, onUpdate, onDelete
                         <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>만 {r.age}세</div>
                       </div>
                       {r.lastRiskLevel ? (
-                        <span className={`badge ${RISK_BADGE[r.lastRiskLevel] || 'badge-neutral'}`} style={{ padding: '0.25rem 0.75rem', fontWeight: 700 }}>{r.lastRiskLevel}</span>
+                        <span className={`badge ${RISK_CONFIG[r.lastRiskLevel]?.badgeClass || 'badge-neutral'}`} style={{ padding: '0.25rem 0.75rem', fontWeight: 700 }}>{r.lastRiskLevel}</span>
                       ) : (
                         <span className="badge badge-neutral">기록 없음</span>
                       )}
