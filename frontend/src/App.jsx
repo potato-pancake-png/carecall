@@ -7,6 +7,7 @@ import StatsPanel from './components/StatsPanel';
 import MyAccountScreen from './components/admin/MyAccountScreen';
 import { fetchRecipients, fetchTodayCallStatus, fetchCallHistory, createRecipient } from './api/dashboardApi';
 import { ADMIN_ACCOUNTS } from './components/admin/adminMockData';
+import { userManager, signOutRedirect } from './auth/userManager';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -60,42 +61,24 @@ function getAvatarLabel(name, email) {
   return (name?.trim()?.[0] || email?.trim()?.[0] || 'A').toUpperCase();
 }
 
-function LoginScreen({ onLogin }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    setError('');
-    onLogin({ email: email.trim() || 'admin@carecall.kr', password: password.trim() || 'password' });
-  }
-
+function LoginScreen() {
   return (
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-           <div style={{ width: '48px', height: '48px', backgroundColor: 'var(--color-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: 'var(--shadow-lg)' }}>
-             <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.5rem' }}>AI</span>
-           </div>
+          <div style={{ width: '48px', height: '48px', backgroundColor: 'var(--color-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: 'var(--shadow-lg)' }}>
+            <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.5rem' }}>AI</span>
+          </div>
           <h1 className="login-title">CareCall</h1>
           <p className="login-subtitle">관리자 통합 대시보드</p>
         </div>
-
-        <form className="form-group" style={{ gap: '1.5rem' }} onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">관리자 이메일</label>
-            <input type="email" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@carecall.kr" autoComplete="email" inputMode="email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" aria-label="관리자 이메일" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">비밀번호</label>
-            <input type="password" className="form-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" minLength="8" aria-label="비밀번호" />
-          </div>
-          {error && <p style={{ margin: 0, color: 'var(--color-danger)', fontSize: '0.875rem', textAlign: 'center' }}>{error}</p>}
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem' }}>
-            시스템 로그인
-          </button>
-        </form>
+        <button
+          className="btn btn-primary"
+          style={{ width: '100%', padding: '0.75rem', marginTop: '1.5rem' }}
+          onClick={() => userManager.signinRedirect()}
+        >
+          로그인
+        </button>
       </div>
     </div>
   );
@@ -142,7 +125,8 @@ function AccountMenu({ currentUser, currentView, onNavigate, onLogout }) {
 }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [cognitoUser, setCognitoUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [currentView, setCurrentView] = useState('dashboard');
   const [activeTab, setActiveTab] = useState('위험도 현황');
   const [selectedRecipient, setSelectedRecipient] = useState(null);
@@ -156,10 +140,17 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dashboardFilter, setDashboardFilter] = useState('전체');
 
-  const currentUser = adminAccounts[0];
+  const currentUser = adminAccounts.find(a => a.email === cognitoUser?.profile?.email) || adminAccounts[0];
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    userManager.getUser().then(user => {
+      setCognitoUser(user);
+      setAuthLoading(false);
+    }).catch(() => setAuthLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!cognitoUser) return;
     setIsLoading(true);
     Promise.all([fetchRecipients(), fetchTodayCallStatus()])
       .then(([recs, today]) => {
@@ -172,9 +163,14 @@ function App() {
         setApiError(true);
       })
       .finally(() => setIsLoading(false));
-  }, [isAuthenticated]);
+  }, [cognitoUser]);
 
-  if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+  if (authLoading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-body)' }}>
+      <div style={{ width: '36px', height: '36px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    </div>
+  );
+  if (!cognitoUser) return <LoginScreen />;
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -253,7 +249,7 @@ function App() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <AccountMenu currentUser={currentUser} currentView={currentView} onNavigate={setCurrentView} onLogout={() => setIsAuthenticated(false)} />
+            <AccountMenu currentUser={currentUser} currentView={currentView} onNavigate={setCurrentView} onLogout={signOutRedirect} />
           </div>
         </div>
       </header>

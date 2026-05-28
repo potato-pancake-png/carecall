@@ -1,9 +1,16 @@
 'use strict';
 
+import { userManager } from '../auth/userManager';
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-async function apiFetch(path, options) {
-  const res = await fetch(`${BASE_URL}${path}`, options);
+async function apiFetch(path, options = {}) {
+  const user = await userManager.getUser();
+  const headers = {
+    ...options.headers,
+    ...(user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {}),
+  };
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || body.message || `HTTP ${res.status}`);

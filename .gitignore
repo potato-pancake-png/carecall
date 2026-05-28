@@ -8,5 +8,7 @@ frontend/.vercel/
 frontend/.gitignore
 .env
 .env.local
+frontend/.env
+frontend/.env.local
 .sprint/
 .claude/
