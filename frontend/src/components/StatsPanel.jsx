@@ -178,9 +178,6 @@ export default function StatsPanel() {
                 <MiniBar value={d.mismatchCalls} max={d.verifiedCalls} color="var(--color-danger)" />
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-danger)', flexShrink: 0 }}>{d.mismatchCalls}</span>
               </div>
-              <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-light)', marginTop: '0.125rem', fontStyle: 'italic' }}>
-                * 참고용 수치 (정정 API 연동 후 업데이트 예정)
-              </div>
             </div>
           </div>
         </div>
@@ -218,9 +215,6 @@ export default function StatsPanel() {
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-main)', flexShrink: 0, width: '20px', textAlign: 'right' }}>{item.value}</span>
               </div>
             ))}
-          </div>
-          <div style={{ marginTop: '1rem', fontSize: '0.6875rem', color: 'var(--color-text-light)', fontStyle: 'italic' }}>
-            * 참고용 수치 (정정 API 연동 후 업데이트 예정)
           </div>
         </div>
 
