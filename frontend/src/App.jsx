@@ -1,4 +1,4 @@
-import React, { Component, useEffect, useRef, useState } from 'react';
+import React, { Component, useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import RecipientList from './components/RecipientList';
 import CallTimeline from './components/CallTimeline';
 import RiskStatusPanel from './components/RiskStatusPanel';
@@ -186,7 +186,7 @@ function App() {
       .finally(() => setIsLoading(false));
   }, [cognitoUser]);
 
-  const handleDateChange = async (newDate) => {
+  const handleDateChange = useCallback(async (newDate) => {
     setSelectedDate(newDate);
     setDashboardFilter('전체');
     setIsLoading(true);
@@ -200,7 +200,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   if (authLoading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-body)' }}>
@@ -227,20 +227,20 @@ function App() {
     }
   };
 
-  const filteredRecipients = recipients.filter(r => {
+  const filteredRecipients = useMemo(() => recipients.filter(r => {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.phoneNumber.includes(searchQuery);
     const matchesFilter = dashboardFilter === '전체' || r.lastRiskLevel === dashboardFilter;
     return matchesSearch && matchesFilter;
-  });
+  }), [recipients, searchQuery, dashboardFilter]);
 
-  const filteredTodayRecords = todayRecords.filter(r => {
+  const filteredTodayRecords = useMemo(() => todayRecords.filter(r => {
     if (dashboardFilter === '전체') return true;
     if (dashboardFilter === '미응답') return r.status === '미응답' || r.riskLevel === '미응답';
     return r.riskLevel === dashboardFilter;
   }).map(r => {
     const recipient = recipients.find(rep => rep.recipientId === r.recipientId);
     return { ...r, phoneNumber: recipient?.phoneNumber || '' };
-  });
+  }), [todayRecords, dashboardFilter, recipients]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { sortByType } from '../utils/sort';
 import { createCorrection } from '../api/dashboardApi';
 import { RISK_CONFIG } from '../utils/riskConfig';
@@ -325,12 +325,13 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
 
   const { confirmId: confirmCallId, callingId, popoverPos, handleClick: handleManualCallClick, handleConfirm: handleConfirmCall, handleClose: handleClosePopover } = useManualCall(r => r.contactId);
 
-  const sortedData = sortByType(atRiskList, sortType, (r) => r.status === '응답', (r) => r.riskLevel);
+  const sortedData = useMemo(
+    () => sortByType(atRiskList, sortType, (r) => r.status === '응답', (r) => r.riskLevel),
+    [atRiskList, sortType]
+  );
 
-  async function handleSaveCorrection(data) {
-    const name = correctionTarget.recipientName;
-    const id = correctionTarget.contactId;
-    const originalRiskLevel = correctionTarget.riskLevel;
+  const handleSaveCorrection = useCallback(async (data) => {
+    const { recipientName: name, contactId: id, riskLevel: originalRiskLevel, recipientId } = correctionTarget;
     setCorrectionTarget(null);
     try {
       await createCorrection(id, {
@@ -339,13 +340,13 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
         reason: data.reason,
       });
       setCorrections(prev => ({ ...prev, [id]: data }));
-      onCorrectionSaved?.(correctionTarget.recipientId, data.riskLevel);
+      onCorrectionSaved?.(recipientId, data.riskLevel);
       setToast(`${name} 님의 위험도가 "${data.riskLevel}"으로 정정되었습니다.`);
     } catch (err) {
       setToast(`정정 저장 실패: ${err.message}`);
     }
     setTimeout(() => setToast(null), 4000);
-  }
+  }, [correctionTarget, onCorrectionSaved]);
 
   return (
     <>
