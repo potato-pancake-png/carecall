@@ -74,7 +74,7 @@ function CallConfirmPopover({ recipient, onConfirm, onCancel, position = 'above'
 }
 
 const RISK_CONFIG = {
-  전체: { label: '총 발신', badgeClass: 'badge-neutral', color: 'var(--color-text-main)', border: 'var(--color-border)' },
+  전체: { label: '전체 발신', badgeClass: 'badge-neutral', color: 'var(--color-text-main)', border: 'var(--color-border)' },
   위험: { label: '위험', badgeClass: 'badge-danger', color: 'var(--color-danger)', border: 'var(--color-danger)' },
   주의: { label: '주의', badgeClass: 'badge-warning', color: 'var(--color-warning)', border: 'var(--color-warning)' },
   정상: { label: '정상', badgeClass: 'badge-success', color: 'var(--color-success)', border: 'var(--color-success)' },
@@ -291,8 +291,7 @@ function RiskCorrectionModal({ record, currentAdmin, onSave, onCancel }) {
 }
 
 function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
-  if (!todayStatus) return null;
-  const { total, riskCounts, date } = todayStatus;
+  const { total = 0, riskCounts = { 정상: 0, 주의: 0, 위험: 0, 미응답: 0 } } = todayStatus || {};
 
   const cards = [
     { type: '전체', count: total },
@@ -465,7 +464,7 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </div>
             <p style={{ fontWeight: 700, fontSize: '1.0625rem', color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>
-              {activeFilter === '전체' ? '모든 대상자가 안전합니다' : `${activeFilter} 판정 대상자가 없습니다`}
+              {activeFilter === '전체' ? '오늘 발신된 통화 기록이 없습니다' : `${activeFilter} 판정 대상자가 없습니다`}
             </p>
             {activeFilter !== '전체' && (
               <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', lineHeight: 1.5, maxWidth: '320px', margin: '0 auto' }}>

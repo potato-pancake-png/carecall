@@ -149,9 +149,10 @@ function App() {
   const [callHistory, setCallHistory] = useState([]);
   const [adminAccounts, setAdminAccounts] = useState(ADMIN_ACCOUNTS);
   const [recipients, setRecipients] = useState([]);
-  const [todayStatus, setTodayStatus] = useState(null);
+  const [todayStatus, setTodayStatus] = useState({ date: null, total: 0, riskCounts: { 정상: 0, 주의: 0, 위험: 0, 미응답: 0 } });
   const [todayRecords, setTodayRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dashboardFilter, setDashboardFilter] = useState('전체');
 
@@ -166,7 +167,10 @@ function App() {
         setTodayStatus({ date: today.date, total: today.total, riskCounts: today.riskCounts });
         setTodayRecords(today.records || []);
       })
-      .catch((err) => console.error('데이터 로딩 실패:', err))
+      .catch((err) => {
+        console.error('API 연결 실패:', err);
+        setApiError(true);
+      })
       .finally(() => setIsLoading(false));
   }, [isAuthenticated]);
 
@@ -259,6 +263,15 @@ function App() {
           </div>
         </div>
       </header>
+
+      {apiError && (
+        <div style={{ backgroundColor: '#fef3c7', borderBottom: '1px solid #fcd34d', padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#92400e', fontWeight: 600 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          서버에 연결할 수 없습니다. AWS 연결 상태를 확인해주세요.
+        </div>
+      )}
 
       <div style={{ flex: 1, backgroundColor: 'var(--color-bg-body)' }}>
         <div className="container" style={{ padding: '2.5rem 2rem' }}>
