@@ -183,7 +183,8 @@ export default function CallTimeline({ history, recipientName, onClose, recipien
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {history.map((record) => {
               const isUnanswered = record.status === '미응답';
-              const sentiment = record.sentiment && SENTIMENT_LABELS[record.sentiment];
+              const sentiment = record.sentiment ? SENTIMENT_LABELS[record.sentiment] : null;
+              const scoreOnly = !sentiment && record.sentimentScore != null;
 
               return (
                 <div key={record.contactId} className="card" style={{ padding: '1.75rem', border: '1px solid var(--color-border)' }}>
@@ -196,6 +197,7 @@ export default function CallTimeline({ history, recipientName, onClose, recipien
                           <>
                             <span className={`badge ${record.riskLevel === '위험' ? 'badge-danger' : record.riskLevel === '주의' ? 'badge-warning' : 'badge-success'}`} style={{ padding: '0.25rem 0.75rem', fontWeight: 800 }}>{record.riskLevel}</span>
                             {sentiment && <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '0.25rem 0.75rem', borderRadius: '99px', color: sentiment.color, backgroundColor: sentiment.bg, border: `1px solid ${sentiment.color}` }}>{sentiment.label} ({record.sentimentScore}점)</span>}
+                            {scoreOnly && <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '0.25rem 0.75rem', borderRadius: '99px', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-subtle)', border: '1px solid var(--color-border-dark)' }}>{record.sentimentScore}점</span>}
                           </>
                         )}
                       </div>
