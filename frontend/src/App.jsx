@@ -202,6 +202,21 @@ function App() {
     }
   }, []);
 
+  const filteredRecipients = useMemo(() => recipients.filter(r => {
+    const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.phoneNumber.includes(searchQuery);
+    const matchesFilter = dashboardFilter === '전체' || r.lastRiskLevel === dashboardFilter;
+    return matchesSearch && matchesFilter;
+  }), [recipients, searchQuery, dashboardFilter]);
+
+  const filteredTodayRecords = useMemo(() => todayRecords.filter(r => {
+    if (dashboardFilter === '전체') return true;
+    if (dashboardFilter === '미응답') return r.status === '미응답' || r.riskLevel === '미응답';
+    return r.riskLevel === dashboardFilter;
+  }).map(r => {
+    const recipient = recipients.find(rep => rep.recipientId === r.recipientId);
+    return { ...r, phoneNumber: recipient?.phoneNumber || '' };
+  }), [todayRecords, dashboardFilter, recipients]);
+
   if (authLoading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-body)' }}>
       <div style={{ width: '36px', height: '36px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -226,21 +241,6 @@ function App() {
       setCallHistory([]);
     }
   };
-
-  const filteredRecipients = useMemo(() => recipients.filter(r => {
-    const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.phoneNumber.includes(searchQuery);
-    const matchesFilter = dashboardFilter === '전체' || r.lastRiskLevel === dashboardFilter;
-    return matchesSearch && matchesFilter;
-  }), [recipients, searchQuery, dashboardFilter]);
-
-  const filteredTodayRecords = useMemo(() => todayRecords.filter(r => {
-    if (dashboardFilter === '전체') return true;
-    if (dashboardFilter === '미응답') return r.status === '미응답' || r.riskLevel === '미응답';
-    return r.riskLevel === dashboardFilter;
-  }).map(r => {
-    const recipient = recipients.find(rep => rep.recipientId === r.recipientId);
-    return { ...r, phoneNumber: recipient?.phoneNumber || '' };
-  }), [todayRecords, dashboardFilter, recipients]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
