@@ -157,15 +157,22 @@ function App() {
   useEffect(() => {
     if (!cognitoUser) return;
     setIsLoading(true);
-    Promise.all([fetchRecipients(), fetchTodayCallStatus()])
-      .then(([recs, today]) => {
-        setRecipients(recs);
-        setTodayStatus({ date: today.date, total: today.total, riskCounts: today.riskCounts });
-        setTodayRecords(today.records || []);
-      })
-      .catch((err) => {
-        console.error('API 연결 실패:', err);
-        setApiError(true);
+    Promise.allSettled([fetchRecipients(), fetchTodayCallStatus()])
+      .then(([recsResult, todayResult]) => {
+        if (recsResult.status === 'fulfilled') {
+          setRecipients(recsResult.value);
+        } else {
+          console.error('대상자 목록 로딩 실패:', recsResult.reason);
+          setApiError(true);
+        }
+        if (todayResult.status === 'fulfilled') {
+          const today = todayResult.value;
+          setTodayStatus({ date: today.date, total: today.total, riskCounts: today.riskCounts });
+          setTodayRecords(today.records || []);
+        } else {
+          console.error('오늘 현황 로딩 실패:', todayResult.reason);
+          setApiError(true);
+        }
       })
       .finally(() => setIsLoading(false));
   }, [cognitoUser]);
