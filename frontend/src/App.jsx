@@ -221,44 +221,38 @@ function App() {
               <h1 className="app-title" style={{ fontSize: '1.25rem', letterSpacing: '-0.02em' }}>CareCall</h1>
             </div>
 
-            {currentView === 'dashboard' && (
-              <>
-                <div className="tabs desktop-only" style={{ marginBottom: 0, borderBottom: 'none' }}>
-                  {DASHBOARD_TABS.map((tab) => (
-                    <button key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} style={{ padding: '1.25rem 0' }} onClick={() => handleTabChange(tab)}>
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-                <select className="mobile-only form-input" style={{ width: 'auto', fontSize: '0.875rem', padding: '0.5rem 0.75rem' }} value={activeTab} onChange={(e) => handleTabChange(e.target.value)}>
-                  {DASHBOARD_TABS.map((tab) => (
-                    <option key={tab} value={tab}>{tab}</option>
-                  ))}
-                </select>
-              </>
-            )}
+            <div className="tabs desktop-only" style={{ marginBottom: 0, borderBottom: 'none' }}>
+                {DASHBOARD_TABS.map((tab) => (
+                  <button key={tab} className={`tab ${currentView === 'dashboard' && activeTab === tab ? 'active' : ''}`} style={{ padding: '1.25rem 0' }} onClick={() => { setCurrentView('dashboard'); handleTabChange(tab); }}>
+                    {tab}
+                  </button>
+                ))}
+              </div>
+              <select className="mobile-only form-input" style={{ width: 'auto', fontSize: '0.875rem', padding: '0.5rem 0.75rem' }} value={activeTab} onChange={(e) => { setCurrentView('dashboard'); handleTabChange(e.target.value); }}>
+                {DASHBOARD_TABS.map((tab) => (
+                  <option key={tab} value={tab}>{tab}</option>
+                ))}
+              </select>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            {currentView === 'dashboard' && (
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <svg
-                  style={{ position: 'absolute', left: '0.875rem', color: 'var(--color-text-light)', pointerEvents: 'none' }}
-                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                >
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="대상자 검색..."
-                  style={{ width: '240px', paddingLeft: '2.75rem', backgroundColor: 'var(--color-bg-subtle)', border: '1px solid var(--color-border)' }}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            )}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <svg
+                style={{ position: 'absolute', left: '0.875rem', color: 'var(--color-text-light)', pointerEvents: 'none' }}
+                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="대상자 검색..."
+                style={{ width: '240px', paddingLeft: '2.75rem', backgroundColor: 'var(--color-bg-subtle)', border: '1px solid var(--color-border)' }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
             <AccountMenu currentUser={currentUser} currentView={currentView} onNavigate={setCurrentView} onLogout={() => setIsAuthenticated(false)} />
           </div>
         </div>
