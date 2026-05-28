@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchTodayCallStatus } from '../api/dashboardApi';
+import { fetchTodayCallStatus, fetchCorrectionStats } from '../api/dashboardApi';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -75,13 +75,19 @@ function BarChart({ values, labels, color }) {
 
 export default function StatsPanel() {
   const [callStats, setCallStats] = useState(null);
+  const [correctionStats, setCorrectionStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const dates = getLast7Dates();
+    const today = dates[dates.length - 1];
 
-    Promise.all(dates.map(date => fetchTodayCallStatus(date)))
-      .then(results => {
+    Promise.allSettled([
+      Promise.all(dates.map(date => fetchTodayCallStatus(date))),
+      fetchCorrectionStats(today),
+    ]).then(([callsResult, correctionResult]) => {
+      if (callsResult.status === 'fulfilled') {
+        const results = callsResult.value;
         const dailyCalls = results.map(r => r.total || 0);
         const dailyLabels = dates.map(date => {
           const d = new Date(`${date}T00:00:00+09:00`);
@@ -91,14 +97,23 @@ export default function StatsPanel() {
         const missedCalls = results.reduce((acc, r) => acc + (r.riskCounts?.미응답 || 0), 0);
         const successCalls = totalCalls - missedCalls;
         const callSuccessRate = totalCalls > 0 ? (successCalls / totalCalls) * 100 : 0;
-
         setCallStats({ totalCalls, successCalls, missedCalls, callSuccessRate, dailyCalls, dailyLabels });
-      })
-      .catch(err => console.error('통계 로딩 실패:', err))
-      .finally(() => setIsLoading(false));
+      } else {
+        console.error('통계 로딩 실패:', callsResult.reason);
+      }
+      if (correctionResult.status === 'fulfilled') {
+        const stats = correctionResult.value;
+        setCorrectionStats({
+          correctionCount: stats.totalCorrections,
+          correctionByLevel: stats.correctionByLevel,
+        });
+      } else {
+        console.error('정정 통계 로딩 실패:', correctionResult.reason);
+      }
+    }).finally(() => setIsLoading(false));
   }, []);
 
-  const d = { ...AI_STATS, ...(callStats || EMPTY_CALL_STATS) };
+  const d = { ...AI_STATS, ...(correctionStats || {}), ...(callStats || EMPTY_CALL_STATS) };
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>

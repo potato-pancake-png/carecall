@@ -5,7 +5,7 @@ import RiskStatusPanel from './components/RiskStatusPanel';
 import AdminAccountsScreen from './components/admin/AdminAccountsScreen';
 import StatsPanel from './components/StatsPanel';
 import MyAccountScreen from './components/admin/MyAccountScreen';
-import { fetchRecipients, fetchTodayCallStatus, fetchCallHistory, createRecipient } from './api/dashboardApi';
+import { fetchRecipients, fetchTodayCallStatus, fetchCallHistory, createRecipient, updateRecipient } from './api/dashboardApi';
 import { ADMIN_ACCOUNTS } from './components/admin/adminMockData';
 // import { signIn, signOut, getCurrentSession } from './auth/cognitoAuth'; // Direct Auth (주석처리)
 import { userManager, signOutRedirect } from './auth/userManager'; // OIDC
@@ -306,7 +306,22 @@ function App() {
                      console.error('대상자 등록 실패:', err);
                    }
                  }}
-                 onUpdate={(r) => setRecipients(recipients.map(i => i.recipientId === r.recipientId ? r : i))}
+                 onUpdate={async (r) => {
+                   try {
+                     await updateRecipient(r.recipientId, {
+                       recipientName: r.name,
+                       age: r.age,
+                       phoneNumber: r.phoneNumber,
+                       address: r.address,
+                       memo: r.memo,
+                       autoCallTime: r.autoCallTime,
+                       autoCallEnabled: r.autoCallEnabled,
+                     });
+                     setRecipients(prev => prev.map(i => i.recipientId === r.recipientId ? { ...i, ...r } : i));
+                   } catch (err) {
+                     console.error('대상자 수정 실패:', err);
+                   }
+                 }}
                  onDelete={(id) => setRecipients(recipients.filter(r => r.recipientId !== id))}
                  onManualCall={(r) => console.log(`수동 발신 요청: ${r.name} (${r.phoneNumber})`)}
                />

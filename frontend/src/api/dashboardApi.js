@@ -7,10 +7,9 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 async function apiFetch(path, options = {}) {
   const user = await userManager.getUser();
-  const token = user?.id_token || user?.access_token;
   const headers = {
     ...options.headers,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(user?.access_token ? { Authorization: `Bearer ${user.access_token}` } : {}),
   };
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   if (!res.ok) {
@@ -53,4 +52,25 @@ export async function createRecipient(recipient) {
       autoCallEnabled: Boolean(recipient.autoCallEnabled),
     }),
   });
+}
+
+export async function updateRecipient(recipientId, fields) {
+  return apiFetch(`/recipients/${recipientId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  });
+}
+
+export async function createCorrection(contactId, { originalRiskLevel, correctedRiskLevel, reason }) {
+  return apiFetch(`/calls/${contactId}/correction`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ originalRiskLevel, correctedRiskLevel, reason }),
+  });
+}
+
+export async function fetchCorrectionStats(day) {
+  const query = day ? `?day=${day}` : '';
+  return apiFetch(`/calls/corrections/stats${query}`);
 }

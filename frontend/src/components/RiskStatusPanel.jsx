@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { sortByType } from '../utils/sort';
+import { createCorrection } from '../api/dashboardApi';
 
 function PhoneIcon({ size = 14 }) {
   return (
@@ -386,12 +387,22 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
 
   const sortedData = sortByType(atRiskList, sortType, (r) => r.status === '응답', (r) => r.riskLevel);
 
-  function handleSaveCorrection(data) {
+  async function handleSaveCorrection(data) {
     const name = correctionTarget.recipientName;
     const id = correctionTarget.contactId;
-    setCorrections(prev => ({ ...prev, [id]: data }));
+    const originalRiskLevel = correctionTarget.riskLevel;
     setCorrectionTarget(null);
-    setToast(`${name} 님의 위험도가 "${data.riskLevel}"으로 정정되었습니다.`);
+    try {
+      await createCorrection(id, {
+        originalRiskLevel,
+        correctedRiskLevel: data.riskLevel,
+        reason: data.reason,
+      });
+      setCorrections(prev => ({ ...prev, [id]: data }));
+      setToast(`${name} 님의 위험도가 "${data.riskLevel}"으로 정정되었습니다.`);
+    } catch (err) {
+      setToast(`정정 저장 실패: ${err.message}`);
+    }
     setTimeout(() => setToast(null), 4000);
   }
 
