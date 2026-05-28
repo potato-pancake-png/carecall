@@ -145,6 +145,9 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dashboardFilter, setDashboardFilter] = useState('전체');
   const [toast, setToast] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })
+  );
 
   const showToast = (msg) => {
     setToast(msg);
@@ -163,8 +166,7 @@ function App() {
   useEffect(() => {
     if (!cognitoUser) return;
     setIsLoading(true);
-    const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
-    Promise.allSettled([fetchRecipients(), fetchTodayCallStatus(todayStr)])
+    Promise.allSettled([fetchRecipients(), fetchTodayCallStatus(selectedDate)])
       .then(([recsResult, todayResult]) => {
         if (recsResult.status === 'fulfilled') {
           setRecipients(recsResult.value);
@@ -183,6 +185,22 @@ function App() {
       })
       .finally(() => setIsLoading(false));
   }, [cognitoUser]);
+
+  const handleDateChange = async (newDate) => {
+    setSelectedDate(newDate);
+    setDashboardFilter('전체');
+    setIsLoading(true);
+    try {
+      const result = await fetchTodayCallStatus(newDate);
+      setTodayStatus({ date: result.date, total: result.total, riskCounts: result.riskCounts });
+      setTodayRecords(result.records || []);
+    } catch (err) {
+      console.error('날짜별 현황 로딩 실패:', err);
+      setApiError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (authLoading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-body)' }}>
@@ -306,6 +324,8 @@ function App() {
                   atRiskList={filteredTodayRecords}
                   activeFilter={dashboardFilter}
                   onFilterChange={setDashboardFilter}
+                  selectedDate={selectedDate}
+                  onDateChange={handleDateChange}
                   onRecipientSelect={(name) => {
                     const recipient = recipients.find(r => r.name === name);
                     if (recipient) handleRecipientSelect(recipient);

@@ -291,8 +291,10 @@ function RiskCorrectionModal({ record, currentAdmin, onSave, onCancel }) {
   );
 }
 
-function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
+function TodayStatusCards({ todayStatus, activeFilter, onFilterChange, selectedDate, onDateChange }) {
   const { total = 0, riskCounts = { 정상: 0, 주의: 0, 위험: 0, 미응답: 0 } } = todayStatus || {};
+  const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+  const isToday = selectedDate === todayStr;
 
   const cards = [
     { type: '전체', count: total },
@@ -303,8 +305,36 @@ function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
     <div style={{ marginBottom: '3rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em' }}>오늘의 통화 인사이트</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.025em' }}>
+            {isToday ? '오늘의 통화 인사이트' : '통화 인사이트'}
+          </h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>카드를 클릭하여 상세 대상자를 필터링하세요.</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {!isToday && (
+            <button
+              onClick={() => onDateChange(todayStr)}
+              style={{
+                fontSize: '0.75rem', fontWeight: 600, padding: '0.375rem 0.75rem',
+                backgroundColor: 'var(--color-primary)', color: 'white',
+                border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              }}
+            >
+              오늘
+            </button>
+          )}
+          <input
+            type="date"
+            value={selectedDate}
+            max={todayStr}
+            onChange={(e) => e.target.value && onDateChange(e.target.value)}
+            style={{
+              fontSize: '0.8125rem', fontWeight: 500, padding: '0.375rem 0.625rem',
+              border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-bg-surface)', color: 'var(--color-text-main)',
+              cursor: 'pointer', outline: 'none',
+            }}
+          />
         </div>
       </div>
 
@@ -653,10 +683,10 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
   );
 }
 
-export default function RiskStatusPanel({ todayStatus, atRiskList, activeFilter, onFilterChange, onRecipientSelect, currentAdmin, onCorrectionSaved }) {
+export default function RiskStatusPanel({ todayStatus, atRiskList, activeFilter, onFilterChange, onRecipientSelect, currentAdmin, onCorrectionSaved, selectedDate, onDateChange }) {
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-      <TodayStatusCards todayStatus={todayStatus} activeFilter={activeFilter} onFilterChange={onFilterChange} />
+      <TodayStatusCards todayStatus={todayStatus} activeFilter={activeFilter} onFilterChange={onFilterChange} selectedDate={selectedDate} onDateChange={onDateChange} />
       <AtRiskList atRiskList={atRiskList} activeFilter={activeFilter} onRecipientSelect={onRecipientSelect} onFilterChange={onFilterChange} currentAdmin={currentAdmin} onCorrectionSaved={onCorrectionSaved} />
     </div>
   );
