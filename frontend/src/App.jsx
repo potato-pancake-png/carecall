@@ -310,6 +310,11 @@ function App() {
                     if (recipient) handleRecipientSelect(recipient);
                   }}
                   currentAdmin={currentUser}
+                  onCorrectionSaved={(recipientId, newRiskLevel) => {
+                    setRecipients(prev => prev.map(r =>
+                      r.recipientId === recipientId ? { ...r, lastRiskLevel: newRiskLevel } : r
+                    ));
+                  }}
                />
              ) : activeTab === '통계' ? (
                <StatsPanel />

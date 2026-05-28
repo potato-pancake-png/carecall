@@ -364,7 +364,7 @@ function TodayStatusCards({ todayStatus, activeFilter, onFilterChange }) {
   );
 }
 
-function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChange, currentAdmin }) {
+function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChange, currentAdmin, onCorrectionSaved }) {
   const [sortType, setSortType] = useState('default');
   const [corrections, setCorrections] = useState({});
   const [correctionTarget, setCorrectionTarget] = useState(null);
@@ -406,6 +406,7 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
         reason: data.reason,
       });
       setCorrections(prev => ({ ...prev, [id]: data }));
+      onCorrectionSaved?.(correctionTarget.recipientId, data.riskLevel);
       setToast(`${name} 님의 위험도가 "${data.riskLevel}"으로 정정되었습니다.`);
     } catch (err) {
       setToast(`정정 저장 실패: ${err.message}`);
@@ -625,18 +626,9 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
                         {r.duration != null ? `${r.duration}분` : '-'}
                       </td>
                       <td style={{ maxWidth: '260px', fontSize: '0.875rem', fontWeight: 600, color: isUrgent ? 'var(--color-text-main)' : 'var(--color-text-muted)' }}>
-                        {correction ? (
-                          <span style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                            <span style={{ color: 'var(--color-text-light)', textDecoration: 'line-through', fontSize: '0.75rem', fontWeight: 500 }}>
-                              {r.riskReason || '-'}
-                            </span>
-                            <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{correction.reason}</span>
-                          </span>
-                        ) : (
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-                            {r.riskReason || '-'}
-                          </span>
-                        )}
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+                          {r.riskReason || '-'}
+                        </span>
                       </td>
                       <td style={{ paddingRight: '1.5rem', textAlign: 'right' }}>
                         <button
@@ -661,11 +653,11 @@ function AtRiskList({ atRiskList, activeFilter, onRecipientSelect, onFilterChang
   );
 }
 
-export default function RiskStatusPanel({ todayStatus, atRiskList, activeFilter, onFilterChange, onRecipientSelect, currentAdmin }) {
+export default function RiskStatusPanel({ todayStatus, atRiskList, activeFilter, onFilterChange, onRecipientSelect, currentAdmin, onCorrectionSaved }) {
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <TodayStatusCards todayStatus={todayStatus} activeFilter={activeFilter} onFilterChange={onFilterChange} />
-      <AtRiskList atRiskList={atRiskList} activeFilter={activeFilter} onRecipientSelect={onRecipientSelect} onFilterChange={onFilterChange} currentAdmin={currentAdmin} />
+      <AtRiskList atRiskList={atRiskList} activeFilter={activeFilter} onRecipientSelect={onRecipientSelect} onFilterChange={onFilterChange} currentAdmin={currentAdmin} onCorrectionSaved={onCorrectionSaved} />
     </div>
   );
 }
